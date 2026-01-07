@@ -1,0 +1,19 @@
+# Data directories
+data/prometheus/*
+!data/prometheus/.gitkeep
+data/grafana/*
+!data/grafana/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+.env.local
