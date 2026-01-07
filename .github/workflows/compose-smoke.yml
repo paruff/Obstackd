@@ -12,6 +12,8 @@ jobs:
 
       - name: Build and start core
         run: |
+          mkdir -p data/prometheus data/grafana
+          chmod -R 777 data/
           docker compose --profile core up -d --build
 
       - name: Wait for services
@@ -21,7 +23,7 @@ jobs:
       - name: Check containers are running
         run: |
           docker compose ps
-          docker compose ps | grep -q "Up"
+          docker compose ps --format json | jq -e '.[] | select(.State == "running")' > /dev/null
 
       - name: Check Prometheus is reachable
         run: |
