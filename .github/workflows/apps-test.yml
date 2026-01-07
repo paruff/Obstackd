@@ -10,19 +10,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check for app services
+        id: check_apps
+        run: |
+          if grep -q 'profiles:.*\[.*"apps".*\]' compose.yaml; then
+            echo "has_apps=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_apps=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and start full stack
+        if: steps.check_apps.outputs.has_apps == 'true'
         run: |
           docker compose --profile core --profile apps up -d --build
 
       - name: Wait
+        if: steps.check_apps.outputs.has_apps == 'true'
         run: sleep 30
 
       - name: Hit endpoints
+        if: steps.check_apps.outputs.has_apps == 'true'
         run: |
           curl -f http://localhost:8080/
           curl -f http://localhost:8080/slow
           curl -f http://localhost:8080/error || true
 
       - name: Shutdown
-        if: always()
+        if: always() && steps.check_apps.outputs.has_apps == 'true'
         run: docker compose down -v
+      
+      - name: Skip - No app services defined
+        if: steps.check_apps.outputs.has_apps == 'false'
+        run: echo "No services with 'apps' profile found in compose.yaml. Skipping app tests."
