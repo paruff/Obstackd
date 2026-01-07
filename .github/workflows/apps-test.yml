@@ -1,0 +1,28 @@
+name: Golden Path App
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start full stack
+        run: |
+          docker compose --profile core --profile apps up -d --build
+
+      - name: Wait
+        run: sleep 30
+
+      - name: Hit endpoints
+        run: |
+          curl -f http://localhost:8080/
+          curl -f http://localhost:8080/slow
+          curl -f http://localhost:8080/error || true
+
+      - name: Shutdown
+        if: always()
+        run: docker compose down -v
