@@ -1,0 +1,17 @@
+name: Supply Chain Hygiene
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail if 'latest' is used
+        run: |
+          if grep -R "image: .*:latest" -n compose.yaml; then
+            echo "Do not use :latest tags"
+            exit 1
+          fi
