@@ -1,0 +1,35 @@
+name: Validate Configs
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Prometheus config
+        run: |
+          docker run --rm \
+            -v $PWD/config/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml \
+            prom/prometheus:v2.50.1 \
+            promtool check config /etc/prometheus/prometheus.yaml
+
+      - name: Validate OTel config
+        run: |
+          docker run --rm \
+            -v $PWD/config/otel/collector.yaml:/etc/otel/config.yaml \
+            otel/opentelemetry-collector-contrib:0.99.0 \
+            --config=/etc/otel/config.yaml --dry-run
+
+      - name: Validate Tempo config
+        run: |
+          docker run --rm \
+            -v $PWD/config/tempo/tempo.yaml:/etc/tempo.yaml \
+            grafana/tempo:2.4.1 \
+            -config.file=/etc/tempo.yaml -validate
+
+      # Later:
+      # - Loki config validation
