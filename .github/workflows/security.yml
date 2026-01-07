@@ -1,0 +1,20 @@
+name: Security Scan
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: "0 3 * * 0"  # weekly
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan repo for secrets & vulns
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: fs
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
