@@ -7,6 +7,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 **Tech Stack:**
 - **OpenTelemetry Collector** (v0.99.0) - Telemetry data collection and routing
 - **Prometheus** (v2.50.1) - Metrics storage and querying
+- **Tempo** (v2.3.1) - Distributed tracing backend
 - **Grafana** (v10.4.2) - Visualization and dashboards
 - **Docker Compose** - Service orchestration
 
@@ -20,8 +21,8 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 - **Docker** 20.10+ installed
 - **Docker Compose** v2.0+ installed
-- At least 2GB of free RAM
-- Ports 3000, 4317, 4318, 8888, 8889, and 9090 available
+- At least 4GB of free RAM
+- Ports 3000, 3200, 4317, 4318, 8888, 8889, 9090, 9095, 9411, 14250, 14268 available
 
 ### Installation
 
@@ -33,7 +34,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 2. **Create data directories:**
    ```bash
-   mkdir -p data/prometheus data/grafana
+   mkdir -p data/prometheus data/grafana data/tempo
    chmod -R 777 data/
    ```
    
@@ -61,11 +62,16 @@ A **Docker Compose-based observability platform** that provides a complete monit
 | Service              | Port  | Purpose                      | Access URL                      |
 |----------------------|-------|------------------------------|---------------------------------|
 | **Grafana**          | 3000  | Visualization UI             | http://localhost:3000           |
+| **Tempo**            | 3200  | Tempo HTTP API               | http://localhost:3200           |
 | **OpenTelemetry**    | 4317  | OTLP gRPC receiver           | localhost:4317                  |
 | **OpenTelemetry**    | 4318  | OTLP HTTP receiver           | localhost:4318                  |
 | **OpenTelemetry**    | 8888  | Collector telemetry metrics  | http://localhost:8888/metrics   |
 | **OpenTelemetry**    | 8889  | App metrics (Prometheus)     | http://localhost:8889/metrics   |
 | **Prometheus**       | 9090  | Metrics storage & query UI   | http://localhost:9090           |
+| **Tempo**            | 9095  | Tempo gRPC                   | localhost:9095                  |
+| **Tempo**            | 9411  | Zipkin receiver              | http://localhost:9411           |
+| **Tempo**            | 14250 | Jaeger gRPC receiver         | localhost:14250                 |
+| **Tempo**            | 14268 | Jaeger HTTP receiver         | http://localhost:14268          |
 
 ---
 
@@ -88,6 +94,9 @@ Verify that all services are operational:
 # Check Prometheus
 curl -f http://localhost:9090/-/ready
 
+# Check Tempo
+curl -f http://localhost:3200/ready
+
 # Check Grafana
 curl -f http://localhost:3000/api/health
 
@@ -104,9 +113,9 @@ curl -f http://localhost:8889/metrics
 
 The system uses Docker Compose profiles to control which services run:
 
-| Profile | Services                                    | Purpose                  |
-|---------|---------------------------------------------|--------------------------|
-| `core`  | otel-collector, prometheus, grafana         | Base observability stack |
+| Profile | Services                                      | Purpose                  |
+|---------|-----------------------------------------------|--------------------------|
+| `core`  | otel-collector, tempo, prometheus, grafana    | Base observability stack |
 
 **To start with a specific profile:**
 ```bash
@@ -123,12 +132,14 @@ All configuration is file-based and located in the `config/` directory:
 config/
 ├── otel/
 │   └── collector.yaml          # OpenTelemetry Collector config
+├── tempo/
+│   └── tempo.yaml              # Tempo distributed tracing config
 ├── prometheus/
 │   └── prometheus.yaml         # Prometheus scrape config
 └── grafana/
     └── provisioning/
         └── datasources/
-            └── datasources.yaml # Pre-configured Prometheus datasource
+            └── datasources.yaml # Pre-configured datasources
 ```
 
 All runtime data is stored in `./data/` and is excluded from version control.
@@ -158,23 +169,25 @@ docker compose down -v
          ▼
 ┌─────────────────────┐
 │ OpenTelemetry       │
-│ Collector           │──────┐
-└──────────┬──────────┘      │
-           │                 │
-           │ metrics         │ logs/traces
-           ▼                 │ (future)
-   ┌──────────────┐          │
-   │  Prometheus  │          │
-   │   :9090      │          │
-   └──────┬───────┘          │
-          │                  │
-          │ datasource       │
-          ▼                  ▼
-     ┌──────────────────────┐
-     │      Grafana         │
-     │       :3000          │
-     └──────────────────────┘
+│ Collector           │──────┬──────┐
+└──────────┬──────────┘      │      │
+           │                 │      │
+           │ metrics         │      │ traces
+           ▼                 │      ▼
+   ┌──────────────┐          │  ┌──────────────┐
+   │  Prometheus  │          │  │    Tempo     │
+   │   :9090      │          │  │    :3200     │
+   └──────┬───────┘          │  └──────┬───────┘
+          │                  │         │
+          │ datasource       │         │ datasource
+          ▼                  ▼         ▼
+     ┌──────────────────────────────────┐
+     │          Grafana                 │
+     │           :3000                  │
+     └──────────────────────────────────┘
 ```
+
+---
 
 ---
 
@@ -212,10 +225,10 @@ docker compose logs grafana
 docker compose down -v
 
 # Clean data directories
-rm -rf data/prometheus/* data/grafana/*
+rm -rf data/prometheus/* data/grafana/* data/tempo/*
 
 # Recreate
-mkdir -p data/prometheus data/grafana
+mkdir -p data/prometheus data/grafana data/tempo
 chmod -R 777 data/
 
 # Start fresh
@@ -328,10 +341,11 @@ jobs:
 
 ## Next Steps
 
-- **Add instrumented applications** to send telemetry to the OTLP endpoints
+- **Add instrumented applications** to send telemetry (metrics & traces) to the OTLP endpoints
 - **Create custom Grafana dashboards** in `config/grafana/dashboards/`
 - **Configure additional Prometheus scrape targets** in `config/prometheus/prometheus.yaml`
-- **Extend the OpenTelemetry pipeline** for traces and logs in `config/otel/collector.yaml`
+- **Query traces in Grafana** using the Tempo datasource to visualize distributed traces
+- **Add Loki for logs** to complete the observability triangle (metrics, traces, logs)
 
 ---
 

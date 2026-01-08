@@ -19,3 +19,24 @@ datasources:
     # Health check configuration
     version: 1
     readOnly: true
+
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    editable: false
+
+    # Connection validation
+    jsonData:
+      httpMethod: GET
+      tracesToMetrics:
+        datasourceUid: 'prometheus'
+      serviceMap:
+        datasourceUid: 'prometheus'
+      search:
+        hide: false
+      nodeGraph:
+        enabled: true
+
+    version: 1
+    readOnly: true
