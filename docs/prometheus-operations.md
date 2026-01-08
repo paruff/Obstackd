@@ -220,7 +220,7 @@ If Prometheus fails to start due to configuration errors:
 
 1. **Validate the configuration file**:
    ```bash
-   docker run --rm -v $(pwd)/config/prometheus:/etc/prometheus \
+   docker run --rm -v "$(pwd)/config/prometheus:/etc/prometheus" \
      prom/prometheus:v2.50.1 \
      promtool check config /etc/prometheus/prometheus.yaml
    ```

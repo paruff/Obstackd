@@ -4,6 +4,9 @@
 
 set -e
 
+# Prometheus version (should match compose.yaml)
+PROMETHEUS_VERSION="v2.50.1"
+
 echo "🔍 Validating Prometheus Docker Compose Configuration..."
 echo ""
 
@@ -24,7 +27,7 @@ echo "✅ prometheus.yaml configuration file exists"
 if [ ! -d "./data/prometheus" ]; then
     echo "⚠️  Data directory missing, creating..."
     mkdir -p ./data/prometheus
-    chmod 755 ./data/prometheus
+    chmod 750 ./data/prometheus
 fi
 echo "✅ data/prometheus directory ready"
 
@@ -39,7 +42,7 @@ else
     echo "Using docker to validate..."
     docker run --rm -v "$(pwd)/config/prometheus:/etc/prometheus" \
         --entrypoint promtool \
-        prom/prometheus:v2.50.1 \
+        "prom/prometheus:${PROMETHEUS_VERSION}" \
         check config /etc/prometheus/prometheus.yaml
 fi
 echo "✅ Prometheus configuration is valid"
