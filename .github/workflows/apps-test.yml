@@ -38,7 +38,7 @@ jobs:
       - name: Shutdown
         if: always() && steps.check_apps.outputs.has_apps == 'true'
         run: docker compose down -v
-      
+
       - name: Skip - No app services defined
         if: steps.check_apps.outputs.has_apps == 'false'
         run: echo "No services with 'apps' profile found in compose.yaml. Skipping app tests."
