@@ -61,9 +61,3 @@ metrics_generator:
       - url: http://prometheus:9090/api/v1/write
         send_exemplars: true
 
-overrides:
-  ingestion_rate_limit_bytes: 10000000
-  ingestion_burst_size_bytes: 20000000
-  max_traces_per_user: 10000000
-  max_bytes_per_trace: 50000
-  max_search_duration: 30m

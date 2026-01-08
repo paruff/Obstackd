@@ -60,7 +60,7 @@ jobs:
           docker run --rm \
             -v $PWD/config/tempo/tempo.yaml:/etc/tempo.yaml \
             grafana/tempo:2.4.1 \
-            -config.file=/etc/tempo.yaml -validate
+            -config.file=/etc/tempo.yaml -config.verify=true
 
       # Later:
       # - Loki config validation
