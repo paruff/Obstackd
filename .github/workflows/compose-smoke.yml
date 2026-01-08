@@ -23,7 +23,7 @@ jobs:
       - name: Check containers are running
         run: |
           docker compose ps
-          docker compose ps --format json | jq -e '.[] | select(.State == "running")' > /dev/null
+          docker compose ps --format json | jq -e 'select(.State == "running")' > /dev/null
 
       - name: Check Prometheus is reachable
         run: |
