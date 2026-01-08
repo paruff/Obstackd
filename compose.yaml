@@ -70,6 +70,7 @@ services:
       - "--web.console.libraries=/etc/prometheus/console_libraries"
       - "--web.enable-lifecycle"
       - "--web.enable-admin-api"
+      - "--web.enable-remote-write-receiver"
       - "--web.external-url=http://localhost:9090"
       - "--log.level=info"
       - "--log.format=json"
