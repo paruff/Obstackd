@@ -29,8 +29,6 @@ datasources:
     # Connection validation
     jsonData:
       httpMethod: GET
-      tracesToLogs:
-        datasourceUid: 'loki'
       tracesToMetrics:
         datasourceUid: 'prometheus'
       serviceMap:
