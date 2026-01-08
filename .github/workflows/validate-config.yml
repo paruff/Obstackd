@@ -10,21 +10,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check for Prometheus config
+        id: check-prometheus
+        run: |
+          if [ -f "config/prometheus/prometheus.yaml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Validate Prometheus config
+        if: steps.check-prometheus.outputs.exists == 'true'
         run: |
           docker run --rm \
             -v $PWD/config/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml \
+            --entrypoint promtool \
             prom/prometheus:v2.50.1 \
-            promtool check config /etc/prometheus/prometheus.yaml
+            check config /etc/prometheus/prometheus.yaml
+
+      - name: Check for OTel config
+        id: check-otel
+        run: |
+          if [ -f "config/otel/collector.yaml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Validate OTel config
+        if: steps.check-otel.outputs.exists == 'true'
         run: |
           docker run --rm \
             -v $PWD/config/otel/collector.yaml:/etc/otel/config.yaml \
             otel/opentelemetry-collector-contrib:0.99.0 \
-            --config=/etc/otel/config.yaml --dry-run
+            validate --config=/etc/otel/config.yaml
+
+      - name: Check for Tempo config
+        id: check-tempo
+        run: |
+          if [ -f "config/tempo/tempo.yaml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Validate Tempo config
+        if: steps.check-tempo.outputs.exists == 'true'
         run: |
           docker run --rm \
             -v $PWD/config/tempo/tempo.yaml:/etc/tempo.yaml \

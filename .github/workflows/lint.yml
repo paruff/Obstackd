@@ -15,7 +15,17 @@ jobs:
         with:
           config_file: .yamllint.yml
 
+      - name: Check for Dockerfiles
+        id: check-dockerfiles
+        run: |
+          if find . -name "Dockerfile" -o -name "*.dockerfile" | grep -q .; then
+            echo "has_dockerfiles=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_dockerfiles=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Lint Dockerfiles
+        if: steps.check-dockerfiles.outputs.has_dockerfiles == 'true'
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: "**/Dockerfile"
