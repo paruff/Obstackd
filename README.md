@@ -27,7 +27,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 1. **Clone and enter:**
    ```bash
-   git clone https://github.com/paruff/Obstackd.git
+   git clone https://github.com/<your-username>/Obstackd.git
    cd Obstackd
    ```
 
@@ -36,6 +36,8 @@ A **Docker Compose-based observability platform** that provides a complete monit
    mkdir -p data/prometheus data/grafana
    chmod -R 777 data/
    ```
+   
+   > **Note:** `chmod 777` is used for maximum compatibility across different Docker setups. For production deployments, consider using more restrictive permissions based on your Docker user/group configuration.
 
 3. **Start the observability stack:**
    ```bash
@@ -188,6 +190,8 @@ lsof -i :9090
 ```bash
 chmod -R 777 data/
 ```
+
+> **Security Note:** The `chmod 777` command is used in this project's smoke tests for maximum compatibility. For production use, consider using more restrictive permissions (e.g., `chmod 755`) and proper Docker user/group configuration.
 
 ### Containers Won't Start
 ```bash
