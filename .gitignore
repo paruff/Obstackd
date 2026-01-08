@@ -4,6 +4,10 @@ data/prometheus/*
 data/grafana/*
 !data/grafana/.gitkeep
 
+# Secrets
+.grafana-secrets.env
+*.env
+
 # OS files
 .DS_Store
 Thumbs.db
