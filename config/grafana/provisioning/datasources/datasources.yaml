@@ -40,3 +40,22 @@ datasources:
 
     version: 1
     readOnly: true
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+
+    # Connection validation
+    jsonData:
+      httpMethod: GET
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: 'tempo'
+          matcherRegex: "traceID=(\\w+)"
+          name: TraceID
+          url: '$${__value.raw}'
+
+    version: 1
+    readOnly: true
