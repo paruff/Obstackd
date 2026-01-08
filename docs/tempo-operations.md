@@ -4,16 +4,17 @@
 
 Grafana Tempo provides distributed tracing storage and query capabilities for the observability stack. It ingests traces in multiple formats (OTLP, Jaeger, Zipkin) and stores them efficiently for querying through Grafana.
 
+**Architecture Note:** All OTLP traffic (from applications) should go through the OpenTelemetry Collector, which then forwards traces to Tempo on the internal Docker network. Direct protocol ingestion (Jaeger, Zipkin) is supported for backward compatibility but not recommended.
+
 ## Access Points
 
 - **Tempo HTTP API**: http://localhost:3200
 - **Tempo Ready Endpoint**: http://localhost:3200/ready
 - **Tempo Metrics**: http://localhost:3200/metrics
-- **OTLP gRPC** (via OTel Collector): localhost:4317
-- **OTLP HTTP** (via OTel Collector): http://localhost:4318
-- **Jaeger gRPC**: localhost:14250
-- **Jaeger HTTP**: http://localhost:14268
-- **Zipkin**: http://localhost:9411
+- **OTLP** (recommended, via OTel Collector): localhost:4317 (gRPC), localhost:4318 (HTTP)
+- **Jaeger gRPC** (legacy, direct to Tempo): localhost:14250
+- **Jaeger HTTP** (legacy, direct to Tempo): http://localhost:14268
+- **Zipkin** (legacy, direct to Tempo): http://localhost:9411
 
 ## Quick Start
 
