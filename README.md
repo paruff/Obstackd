@@ -21,7 +21,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Docker** 20.10+ installed
 - **Docker Compose** v2.0+ installed
 - At least 2GB of free RAM
-- Ports 3000, 4317, 4318, 8888, and 9090 available
+- Ports 3000, 4317, 4318, 8888, 8889, and 9090 available
 
 ### Installation
 
@@ -63,7 +63,8 @@ A **Docker Compose-based observability platform** that provides a complete monit
 | **Grafana**          | 3000  | Visualization UI             | http://localhost:3000           |
 | **OpenTelemetry**    | 4317  | OTLP gRPC receiver           | localhost:4317                  |
 | **OpenTelemetry**    | 4318  | OTLP HTTP receiver           | localhost:4318                  |
-| **OpenTelemetry**    | 8888  | Collector metrics endpoint   | http://localhost:8888/metrics   |
+| **OpenTelemetry**    | 8888  | Collector telemetry metrics  | http://localhost:8888/metrics   |
+| **OpenTelemetry**    | 8889  | App metrics (Prometheus)     | http://localhost:8889/metrics   |
 | **Prometheus**       | 9090  | Metrics storage & query UI   | http://localhost:9090           |
 
 ---
@@ -90,8 +91,11 @@ curl -f http://localhost:9090/-/ready
 # Check Grafana
 curl -f http://localhost:3000/api/health
 
-# Check OpenTelemetry Collector metrics
+# Check OpenTelemetry Collector telemetry
 curl -f http://localhost:8888/metrics
+
+# Check OpenTelemetry Collector app metrics endpoint
+curl -f http://localhost:8889/metrics
 ```
 
 ---

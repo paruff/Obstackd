@@ -2,7 +2,9 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       http:
+        endpoint: 0.0.0.0:4318
 
 processors:
   memory_limiter:
@@ -11,18 +13,20 @@ processors:
     spike_limit_mib: 100
 
   batch:
-    send_batch_size: 1024
-    timeout: 5s
+    send_batch_size: 10000
+    timeout: 10s
 
 exporters:
   debug:
     verbosity: detailed
 
   prometheus:
-    endpoint: "0.0.0.0:8888"
-    namespace: "otelcol"
+    endpoint: "0.0.0.0:8889"
+    namespace: "app_metrics"
     const_labels:
-      lab: "observability"
+      service: "otel-collector"
+    send_timestamps: true
+    metric_expiration: 5m
 
 service:
   telemetry:

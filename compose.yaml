@@ -11,7 +11,8 @@ services:
     ports:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
-      - "8888:8888"   # Prometheus metrics from collector
+      - "8888:8888"   # Collector's own telemetry metrics
+      - "8889:8889"   # Prometheus exporter for app metrics
     depends_on:
       - prometheus
     profiles: ["core"]
