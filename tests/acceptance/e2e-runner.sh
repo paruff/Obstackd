@@ -109,10 +109,27 @@ run_test_scenario() {
             ;;
         "quick-check")
             echo -e "${BLUE}Running quick health check...${NC}"
-            # Quick check: just verify endpoints are reachable
-            curl -sf http://localhost:8889/metrics | grep -q "otelcol_process_uptime" && \
-            curl -sf http://localhost:9090/-/healthy >/dev/null && \
-            curl -sf http://localhost:3000/api/health >/dev/null
+            # Quick check: just verify endpoints are reachable and returning expected data
+            if curl -sf http://localhost:8888/metrics 2>/dev/null | grep -q "otelcol_process_uptime"; then
+                echo -e "${GREEN}✅ OTel Collector metrics available${NC}"
+            else
+                echo -e "${RED}❌ OTel Collector metrics not available${NC}"
+                return 1
+            fi
+            
+            if curl -sf http://localhost:9090/-/healthy >/dev/null 2>&1; then
+                echo -e "${GREEN}✅ Prometheus is healthy${NC}"
+            else
+                echo -e "${RED}❌ Prometheus is unhealthy${NC}"
+                return 1
+            fi
+            
+            if curl -sf http://localhost:3000/api/health >/dev/null 2>&1; then
+                echo -e "${GREEN}✅ Grafana is healthy${NC}"
+            else
+                echo -e "${RED}❌ Grafana is unhealthy${NC}"
+                return 1
+            fi
             ;;
         *)
             echo -e "${RED}Unknown scenario: ${scenario}${NC}"
