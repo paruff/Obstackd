@@ -21,3 +21,7 @@ Thumbs.db
 
 # Docker
 .env.local
+
+# Test reports
+tests/acceptance/observability-pipeline/reports/*
+!tests/acceptance/observability-pipeline/reports/.gitkeep

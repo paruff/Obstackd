@@ -224,6 +224,108 @@ docker compose --profile core up -d
 
 ---
 
+## Observability Acceptance Test
+
+### Purpose
+This automated test validates that the complete observability pipeline is functioning correctly:
+1. **OpenTelemetry Collector** → Exports self-telemetry metrics
+2. **Prometheus** → Scrapes and stores OTel Collector metrics
+3. **Grafana** → Queries and visualizes metrics
+
+### Quick Start
+```bash
+# Ensure services are running
+docker compose --profile core up -d
+sleep 30
+
+# Run the complete acceptance test
+./tests/acceptance/observability-pipeline/test-otel-pipeline.sh
+```
+
+### Expected Output
+```
+✅ OTel Collector healthy (0s)
+✅ Prometheus scraping OTel metrics (1s, 1 metrics)
+✅ Grafana datasource configured (0s)
+✅ SUCCESS: OTel metrics visible in Grafana
+  Data points: 15
+  Sample value: 123.456
+========================================
+✅ ACCEPTANCE TEST PASSED
+========================================
+```
+
+### Manual Verification
+
+If you prefer to verify manually:
+
+1. **Open Grafana**: http://localhost:3000 (admin/admin)
+2. **Navigate to**: Explore → Prometheus datasource
+3. **Run Query**: `otelcol_process_uptime`
+4. **Expected**: Graph showing uptime increasing over time
+
+### Using the E2E Runner
+
+The E2E runner provides additional control over test execution:
+
+```bash
+# Run with automatic service detection
+./tests/acceptance/e2e-runner.sh
+
+# Force start services before testing
+./tests/acceptance/e2e-runner.sh --start-services
+
+# Run test and clean up after
+./tests/acceptance/e2e-runner.sh --cleanup
+
+# Quick health check only
+./tests/acceptance/e2e-runner.sh --scenario quick-check
+```
+
+### Test Results
+
+Test results are saved in `tests/acceptance/observability-pipeline/reports/` with timestamped directories containing:
+- `summary.md` - Human-readable test report
+- `report.json` - Machine-readable results for CI/CD
+- `e2e-test-evidence.md` - Detailed test evidence
+- `grafana-query-response.json` - Raw Grafana API response
+- `test-execution.log` - Complete execution log
+
+### Troubleshooting
+
+If tests fail, check:
+
+1. **Services Running**: `docker compose ps`
+2. **OTel Metrics**: `curl http://localhost:8888/metrics | grep otelcol`
+3. **Prometheus Target**: http://localhost:9090/targets
+4. **Grafana Health**: `curl http://localhost:3000/api/health`
+
+### Integration with CI/CD
+
+```yaml
+# GitHub Actions example
+jobs:
+  observability-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run acceptance test
+        run: |
+          mkdir -p data/prometheus data/grafana
+          chmod -R 777 data/
+          docker compose --profile core up -d
+          sleep 30
+          ./tests/acceptance/observability-pipeline/test-otel-pipeline.sh
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-test-report
+          path: tests/acceptance/observability-pipeline/reports/**/summary.md
+```
+
+---
+
 ## Next Steps
 
 - **Add instrumented applications** to send telemetry to the OTLP endpoints
