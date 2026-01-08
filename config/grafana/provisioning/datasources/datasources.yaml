@@ -7,3 +7,15 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: false
+
+    # Connection validation
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      cacheLevel: "High"
+      disableMetricsLookup: false
+
+    # Health check configuration
+    version: 1
+    readOnly: true
