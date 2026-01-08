@@ -3,6 +3,8 @@ data/prometheus/*
 !data/prometheus/.gitkeep
 data/grafana/*
 !data/grafana/.gitkeep
+data/tempo/*
+!data/tempo/.gitkeep
 
 # Secrets
 .grafana-secrets.env

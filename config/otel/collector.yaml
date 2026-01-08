@@ -28,6 +28,11 @@ exporters:
     send_timestamps: true
     metric_expiration: 5m
 
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
 service:
   telemetry:
     logs:
@@ -41,3 +46,8 @@ service:
       receivers: [otlp]
       processors: [memory_limiter, batch]
       exporters: [prometheus, debug]
+
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/tempo, debug]
