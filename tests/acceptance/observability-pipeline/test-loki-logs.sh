@@ -17,6 +17,7 @@ readonly FAILURE_FILE="${REPORT_DIR}/FAILURE"
 readonly MAX_DURATION=120  # seconds
 readonly RETRY_INTERVAL=5
 readonly RETRY_ATTEMPTS=10
+readonly NANOSECONDS_SUFFIX="000000000"  # Suffix to convert Unix timestamp (seconds) to nanoseconds
 
 # Colors for output
 readonly GREEN='\033[0;32m'
@@ -136,8 +137,8 @@ test_log_ingestion() {
         
         # Query Loki for any docker logs in the last 5 minutes
         local query_result
-        local start_time=$(date -u -d '5 minutes ago' +%s)000000000
-        local end_time=$(date -u +%s)000000000
+        local start_time=$(date -u -d '5 minutes ago' +%s)${NANOSECONDS_SUFFIX}
+        local end_time=$(date -u +%s)${NANOSECONDS_SUFFIX}
         
         query_result=$(curl -G -s "http://localhost:3100/loki/api/v1/query_range" \
             --data-urlencode 'query={job="docker"}' \
@@ -231,8 +232,8 @@ test_logql_query() {
     
     # Query for a specific container (grafana)
     local query_result
-    local start_time=$(date -u -d '10 minutes ago' +%s)000000000
-    local end_time=$(date -u +%s)000000000
+    local start_time=$(date -u -d '10 minutes ago' +%s)${NANOSECONDS_SUFFIX}
+    local end_time=$(date -u +%s)${NANOSECONDS_SUFFIX}
     
     query_result=$(curl -G -s "http://localhost:3100/loki/api/v1/query_range" \
         --data-urlencode 'query={container="grafana"}' \
@@ -262,7 +263,7 @@ test_trace_correlation_config() {
     echo -e "\n${BLUE}[${test_id}] Testing Trace Correlation Configuration${NC}"
     
     # Check Grafana datasource configuration for Loki
-    local datasource_file="/home/runner/work/Obstackd/Obstackd/config/grafana/provisioning/datasources/datasources.yaml"
+    local datasource_file="${TEST_DIR}/../../../config/grafana/provisioning/datasources/datasources.yaml"
     
     if [[ ! -f "${datasource_file}" ]]; then
         echo -e "${RED}✗ Datasource configuration file not found${NC}"

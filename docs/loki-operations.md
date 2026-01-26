@@ -527,10 +527,10 @@ scrape_configs:
 
 ## References
 
-- **Loki Documentation**: https://grafana.com/docs/loki/latest/
-- **LogQL Guide**: https://grafana.com/docs/loki/latest/logql/
-- **Promtail Configuration**: https://grafana.com/docs/loki/latest/clients/promtail/configuration/
-- **Best Practices**: https://grafana.com/docs/loki/latest/best-practices/
+- **Loki Documentation**: https://grafana.com/docs/loki/v2.9.x/
+- **LogQL Guide**: https://grafana.com/docs/loki/v2.9.x/query/
+- **Promtail Configuration**: https://grafana.com/docs/loki/v2.9.x/send-data/promtail/configuration/
+- **Best Practices**: https://grafana.com/docs/loki/v2.9.x/operations/best-practices/
 
 ## Support
 
