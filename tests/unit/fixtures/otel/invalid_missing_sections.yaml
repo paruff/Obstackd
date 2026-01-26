@@ -1,0 +1,9 @@
+# Invalid: Missing required sections
+# This should fail validation - no receivers, processors, or exporters
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

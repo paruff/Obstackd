@@ -1,0 +1,7 @@
+# Invalid: Missing apiVersion
+# This should fail validation
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    url: http://prometheus:9090

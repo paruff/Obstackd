@@ -1,0 +1,22 @@
+# Invalid: Missing required OTLP receiver
+# This should fail validation
+
+receivers:
+  # OTLP receiver is missing - this is required!
+  dummy:
+    endpoint: "0.0.0.0:9999"
+
+processors:
+  batch:
+    timeout: 10s
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]  # References undefined receiver
+      processors: [batch]
+      exporters: [debug]

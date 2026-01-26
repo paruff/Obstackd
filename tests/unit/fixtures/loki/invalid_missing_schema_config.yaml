@@ -1,0 +1,7 @@
+# Invalid: Missing schema_config
+# This should fail validation
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100

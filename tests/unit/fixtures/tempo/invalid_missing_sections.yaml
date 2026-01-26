@@ -1,0 +1,5 @@
+# Invalid: Missing required sections
+# This should fail validation
+
+server:
+  http_listen_port: 3200
