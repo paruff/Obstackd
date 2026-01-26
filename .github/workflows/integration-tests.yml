@@ -1,0 +1,145 @@
+name: Integration Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/integration/requirements.txt
+
+      - name: Create data directories
+        run: |
+          mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager data/homeassistant
+          chmod -R 777 data/
+
+      - name: Start observability stack
+        run: |
+          docker compose --profile core up -d --build
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to start..."
+          sleep 45
+          
+          echo "Checking service health..."
+          docker compose ps
+          
+          # Wait for Prometheus
+          timeout 60 bash -c 'until curl -sf http://localhost:9090/-/ready; do echo "Waiting for Prometheus..."; sleep 2; done'
+          echo "✅ Prometheus is ready"
+          
+          # Wait for Grafana
+          timeout 60 bash -c 'until curl -sf http://localhost:3000/api/health; do echo "Waiting for Grafana..."; sleep 2; done'
+          echo "✅ Grafana is ready"
+          
+          # Wait for Tempo
+          timeout 60 bash -c 'until curl -sf http://localhost:3200/ready; do echo "Waiting for Tempo..."; sleep 2; done'
+          echo "✅ Tempo is ready"
+          
+          # Wait for Loki
+          timeout 60 bash -c 'until curl -sf http://localhost:3100/ready; do echo "Waiting for Loki..."; sleep 2; done'
+          echo "✅ Loki is ready"
+          
+          # Wait for OTel Collector
+          timeout 60 bash -c 'until curl -sf http://localhost:8888/metrics; do echo "Waiting for OTel Collector..."; sleep 2; done'
+          echo "✅ OTel Collector is ready"
+          
+          # Additional stabilization time
+          echo "Allowing services to stabilize..."
+          sleep 20
+
+      - name: Run Prometheus scraping tests
+        run: |
+          pytest tests/integration/test_prometheus_scraping.py -v --tb=short --color=yes
+        env:
+          PROMETHEUS_URL: http://localhost:9090
+
+      - name: Run OTel Collector tests
+        run: |
+          pytest tests/integration/test_otel_collector.py -v --tb=short --color=yes
+        env:
+          OTEL_METRICS_URL: http://localhost:8888
+
+      - name: Run Grafana integration tests
+        run: |
+          pytest tests/integration/test_grafana_integration.py -v --tb=short --color=yes
+        env:
+          GRAFANA_URL: http://localhost:3000
+          GRAFANA_USER: admin
+          GRAFANA_PASSWORD: admin
+
+      - name: Run Tempo integration tests
+        run: |
+          pytest tests/integration/test_tempo_integration.py -v --tb=short --color=yes
+        env:
+          TEMPO_URL: http://localhost:3200
+
+      - name: Run Loki integration tests
+        run: |
+          pytest tests/integration/test_loki_integration.py -v --tb=short --color=yes
+        env:
+          LOKI_URL: http://localhost:3100
+
+      - name: Run existing dashboard tests
+        run: |
+          pytest tests/integration/test_dashboards.py -v --tb=short --color=yes
+        env:
+          GRAFANA_URL: http://localhost:3000
+          GRAFANA_USER: admin
+          GRAFANA_PASSWORD: admin
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== Docker Compose Services ==="
+          docker compose ps
+          
+          echo "=== Prometheus Logs ==="
+          docker compose logs --tail=100 prometheus
+          
+          echo "=== Grafana Logs ==="
+          docker compose logs --tail=100 grafana
+          
+          echo "=== OTel Collector Logs ==="
+          docker compose logs --tail=100 otel-collector
+          
+          echo "=== Tempo Logs ==="
+          docker compose logs --tail=100 tempo
+          
+          echo "=== Loki Logs ==="
+          docker compose logs --tail=100 loki
+          
+          echo "=== Promtail Logs ==="
+          docker compose logs --tail=100 promtail
+
+      - name: Shutdown services
+        if: always()
+        run: |
+          docker compose --profile core down -v
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            tests/integration/reports/
+            pytest-report.xml
+          if-no-files-found: ignore
