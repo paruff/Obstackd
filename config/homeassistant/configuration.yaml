@@ -1,3 +1,4 @@
+---
 # Home Assistant Configuration
 # Minimal configuration for integration testing
 
@@ -10,7 +11,7 @@ homeassistant:
   time_zone: UTC
   external_url: "http://homeassistant:8123"
   internal_url: "http://homeassistant:8123"
-  
+
 # Enable default configuration features
 default_config:
 
@@ -47,7 +48,7 @@ automation:
       - service: persistent_notification.create
         data:
           message: "Test automation executed"
-          
+
   - alias: "Test Automation 2"
     trigger:
       - platform: time
@@ -70,7 +71,7 @@ template:
       - name: "Test Sensor 1"
         state: "42"
         unit_of_measurement: 'units'
-        
+
       - name: "Test Sensor 2"
         state: "{{ 84 }}"
         unit_of_measurement: 'units'
