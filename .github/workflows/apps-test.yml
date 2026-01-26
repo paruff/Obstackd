@@ -13,7 +13,9 @@ jobs:
       - name: Check for app services
         id: check_apps
         run: |
-          if grep -q 'profiles:.*\[.*"apps".*\]' compose.yaml; then
+          # Check for demo app services (those exposing port 8080)
+          # Home Assistant is an integration test component, not a demo app
+          if grep -q '"8080:8080"' compose.yaml; then
             echo "has_apps=true" >> $GITHUB_OUTPUT
           else
             echo "has_apps=false" >> $GITHUB_OUTPUT
@@ -22,6 +24,8 @@ jobs:
       - name: Build and start full stack
         if: steps.check_apps.outputs.has_apps == 'true'
         run: |
+          mkdir -p data/prometheus data/grafana data/homeassistant
+          chmod -R 777 data/
           docker compose --profile core --profile apps up -d --build
 
       - name: Wait
@@ -41,4 +45,4 @@ jobs:
 
       - name: Skip - No app services defined
         if: steps.check_apps.outputs.has_apps == 'false'
-        run: echo "No services with 'apps' profile found in compose.yaml. Skipping app tests."
+        run: echo "No demo app services (port 8080) found in compose.yaml. Skipping golden path app tests."

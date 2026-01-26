@@ -1,0 +1,8 @@
+# Integration Testing Requirements
+# Python dependencies for Home Assistant integration tests
+
+pytest>=7.4.3
+pytest-bdd>=6.1.1
+requests>=2.31.0
+python-dotenv>=1.0.0
+PyYAML>=6.0.1
