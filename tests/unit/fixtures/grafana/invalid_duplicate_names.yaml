@@ -7,7 +7,7 @@ datasources:
   - name: Prometheus
     type: prometheus
     url: http://prometheus:9090
-  
+
   - name: Prometheus  # Duplicate name!
     type: prometheus
     url: http://prometheus2:9090
