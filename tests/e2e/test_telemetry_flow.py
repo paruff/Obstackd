@@ -5,7 +5,6 @@ Tests synthetic telemetry generation, propagation, and validation across the obs
 BDD Scenarios:
 - Metrics flow from application to Grafana
 - Traces flow from application to Tempo
-- Logs flow from application to Loki
 - Trace and metric correlation works
 """
 
@@ -262,8 +261,10 @@ class TestMetricsFlow:
         
         while time.time() - start_time < max_wait:
             try:
+                # NOTE: Using 'prometheus' as UID - this may need to match actual Grafana datasource UID
+                # Check actual UID with: curl -u admin:admin http://localhost:3000/api/datasources
                 result = grafana_query(
-                    "prometheus",  # Prometheus datasource UID
+                    "prometheus",  # Prometheus datasource UID (may need adjustment)
                     {
                         "expr": f'app_metrics_e2e_test_counter_total{{test_id="{test_id}"}}',
                         "refId": "A",
@@ -386,8 +387,10 @@ class TestTracesFlow:
         
         while time.time() - start_time < max_wait:
             try:
+                # NOTE: Using 'tempo' as UID - this may need to match actual Grafana datasource UID
+                # Check actual UID with: curl -u admin:admin http://localhost:3000/api/datasources
                 result = grafana_query(
-                    "tempo",  # Tempo datasource UID
+                    "tempo",  # Tempo datasource UID (may need adjustment)
                     {
                         "queryType": "traceql",
                         "query": trace_id,
