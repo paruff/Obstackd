@@ -1,0 +1,156 @@
+groups:
+  # Critical service availability alerts
+  - name: service_availability
+    interval: 30s
+    rules:
+      # Alert when any monitored service is down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "The service {{ $labels.job }} on instance {{ $labels.instance }} has been down for more than 2 minutes."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#servicedown"
+      
+      # Alert when OpenTelemetry Collector is down (critical for observability)
+      - alert: OTelCollectorDown
+        expr: up{job="otel-collector"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: observability
+          component: otel-collector
+        annotations:
+          summary: "OpenTelemetry Collector is down"
+          description: "The OpenTelemetry Collector has been down for more than 1 minute. This affects all telemetry data collection."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#otelcollectordown"
+      
+      # Alert when Prometheus is having issues scraping targets
+      - alert: PrometheusScrapeFailure
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: warning
+          category: monitoring
+        annotations:
+          summary: "Prometheus scrape failure for {{ $labels.job }}"
+          description: "Prometheus has failed to scrape {{ $labels.job }} on {{ $labels.instance }} for more than 5 minutes."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#prometheusscrapefailure"
+
+  # Resource utilization alerts
+  - name: resource_utilization
+    interval: 1m
+    rules:
+      # High CPU usage alert
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(process_cpu_seconds_total[5m])) * 100) < 20
+        for: 10m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage on {{ $labels.instance }} has been above 80% for more than 10 minutes."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#highcpuusage"
+      
+      # Critical CPU usage
+      - alert: CriticalCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(process_cpu_seconds_total[5m])) * 100) < 10
+        for: 5m
+        labels:
+          severity: critical
+          category: resource
+        annotations:
+          summary: "Critical CPU usage on {{ $labels.instance }}"
+          description: "CPU usage on {{ $labels.instance }} has been above 90% for more than 5 minutes. Immediate action required."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#criticalcpuusage"
+      
+      # High memory usage for OTel Collector
+      - alert: OTelCollectorHighMemory
+        expr: |
+          process_resident_memory_bytes{job="otel-collector"} / 1024 / 1024 / 1024 > 3
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+          component: otel-collector
+        annotations:
+          summary: "OpenTelemetry Collector high memory usage"
+          description: "OTel Collector is using more than 3GB of memory for over 5 minutes."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#otelcollectorhighmemory"
+
+  # Prometheus specific alerts
+  - name: prometheus_health
+    interval: 1m
+    rules:
+      # Alert when Prometheus is running out of TSDB space
+      - alert: PrometheusTSDBReloadsFailing
+        expr: increase(prometheus_tsdb_reloads_failures_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: storage
+        annotations:
+          summary: "Prometheus TSDB reloads are failing"
+          description: "Prometheus has had {{ $value }} TSDB reload failures in the last hour."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#prometheustsdbreloadsfailing"
+      
+      # Alert for high query latency
+      - alert: PrometheusSlowQueries
+        expr: |
+          histogram_quantile(0.99, rate(prometheus_engine_query_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Prometheus queries are slow"
+          description: "99th percentile of Prometheus query duration is above 5 seconds for more than 10 minutes."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#prometheusslowqueries"
+      
+      # Alert when Prometheus is approaching storage capacity
+      - alert: PrometheusStorageAlmostFull
+        expr: |
+          (1 - (prometheus_tsdb_storage_blocks_bytes / prometheus_tsdb_retention_limit_bytes)) * 100 < 20
+        for: 30m
+        labels:
+          severity: warning
+          category: storage
+        annotations:
+          summary: "Prometheus storage is almost full"
+          description: "Prometheus storage is over 80% full. Consider increasing retention or storage size."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#prometheusstoragealmostfull"
+
+  # Alertmanager specific alerts
+  - name: alertmanager_health
+    interval: 1m
+    rules:
+      # Alert when Alertmanager configuration reload fails
+      - alert: AlertmanagerConfigReloadFailed
+        expr: alertmanager_config_last_reload_successful == 0
+        for: 5m
+        labels:
+          severity: warning
+          category: alerting
+        annotations:
+          summary: "Alertmanager configuration reload failed"
+          description: "Alertmanager configuration reload has failed. Check the configuration file for errors."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#alertmanagerconfigreloadfailed"
+      
+      # Alert when Alertmanager cluster is not healthy
+      - alert: AlertmanagerClusterDown
+        expr: |
+          count by (job) (up{job="alertmanager"} == 1) < 1
+        for: 2m
+        labels:
+          severity: critical
+          category: alerting
+        annotations:
+          summary: "Alertmanager cluster is down"
+          description: "No Alertmanager instances are reachable. Alert notifications are not being sent."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#alertmanagerclusterdown"

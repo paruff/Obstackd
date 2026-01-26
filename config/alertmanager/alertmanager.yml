@@ -1,0 +1,123 @@
+# Alertmanager Configuration
+# https://prometheus.io/docs/alerting/latest/configuration/
+
+global:
+  resolve_timeout: 5m
+  # SMTP settings (disabled by default, configure for email notifications)
+  # smtp_smarthost: 'localhost:25'
+  # smtp_from: 'alertmanager@example.com'
+  # smtp_auth_username: ''
+  # smtp_auth_password: ''
+  # smtp_require_tls: false
+
+# Templates for notification messages
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route defines the routing tree and notification destinations
+route:
+  # Default receiver for all alerts
+  receiver: 'default-webhook'
+  
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service']
+  
+  # How long to wait before sending initial notification for a group
+  group_wait: 30s
+  
+  # How long to wait before sending notification about new alerts added to group
+  group_interval: 5m
+  
+  # How long to wait before re-sending a notification
+  repeat_interval: 4h
+  
+  # Child routes for specific alert routing
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: false
+    
+    # Warning alerts - standard notification
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 4h
+      continue: false
+    
+    # Info alerts - batched notification
+    - match:
+        severity: info
+      receiver: 'info-alerts'
+      group_wait: 5m
+      repeat_interval: 12h
+      continue: false
+
+# Inhibition rules - suppress notifications for certain alerts
+inhibit_rules:
+  # Inhibit warning and info if same alertname with critical severity exists
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']
+  
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'cluster', 'service']
+  
+  # Inhibit info if same alertname with warning severity exists
+  - source_match:
+      severity: 'warning'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'cluster', 'service']
+
+# Receivers define notification destinations
+receivers:
+  # Default webhook receiver for testing
+  - name: 'default-webhook'
+    webhook_configs:
+      - url: 'http://host.docker.internal:5001/webhook'
+        send_resolved: true
+        max_alerts: 0
+  
+  # Critical alerts receiver
+  - name: 'critical-alerts'
+    webhook_configs:
+      - url: 'http://host.docker.internal:5001/webhook/critical'
+        send_resolved: true
+        max_alerts: 0
+    # Uncomment for Slack integration
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    #     channel: '#alerts-critical'
+    #     title: '{{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    #     send_resolved: true
+  
+  # Warning alerts receiver
+  - name: 'warning-alerts'
+    webhook_configs:
+      - url: 'http://host.docker.internal:5001/webhook/warning'
+        send_resolved: true
+        max_alerts: 0
+    # Uncomment for email notifications
+    # email_configs:
+    #   - to: 'team@example.com'
+    #     headers:
+    #       Subject: 'Warning Alert: {{ .GroupLabels.alertname }}'
+    #     send_resolved: true
+  
+  # Info alerts receiver
+  - name: 'info-alerts'
+    webhook_configs:
+      - url: 'http://host.docker.internal:5001/webhook/info'
+        send_resolved: true
+        max_alerts: 0

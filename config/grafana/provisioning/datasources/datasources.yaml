@@ -59,3 +59,17 @@ datasources:
 
     version: 1
     readOnly: true
+
+  - name: Alertmanager
+    type: alertmanager
+    access: proxy
+    url: http://alertmanager:9093
+    editable: false
+
+    # Connection validation
+    jsonData:
+      httpMethod: GET
+      implementation: prometheus
+
+    version: 1
+    readOnly: true

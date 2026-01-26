@@ -9,13 +9,14 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # - alertmanager:9093
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
+      api_version: v2
 
 # Rule files
 rule_files:
-  # - "alert_rules.yml"
-  # - "recording_rules.yml"
+  - "/etc/prometheus/alerts.yml"
 
 # Scrape configurations
 scrape_configs:
@@ -53,3 +54,14 @@ scrape_configs:
     # Scrape timeout and retry settings
     scrape_timeout: 10s
     honor_labels: true
+
+  # Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels:
+          component: 'alertmanager'
+          service: 'alerting'
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scheme: 'http'
