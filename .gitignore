@@ -9,6 +9,8 @@ data/loki/*
 !data/loki/.gitkeep
 data/alertmanager/*
 !data/alertmanager/.gitkeep
+data/homeassistant/*
+!data/homeassistant/.gitkeep
 
 # Secrets
 .grafana-secrets.env
@@ -31,3 +33,14 @@ Thumbs.db
 # Test reports
 tests/acceptance/observability-pipeline/reports/*
 !tests/acceptance/observability-pipeline/reports/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
