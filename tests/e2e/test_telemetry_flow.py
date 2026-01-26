@@ -19,9 +19,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.exporter.otlp.proto.http.trace_export import OTLPSpanExporter as HTTPSpanExporter
-from opentelemetry.exporter.otlp.proto.http.metric_export import OTLPMetricExporter as HTTPMetricExporter
-from opentelemetry.exporter.otlp.proto.grpc.trace_export import OTLPSpanExporter as GRPCSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter as HTTPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter as HTTPMetricExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter as GRPCSpanExporter
 import logging
 
 
@@ -198,7 +198,8 @@ class TestMetricsFlow:
         
         while time.time() - start_time < max_wait:
             try:
-                result = prometheus_query(f'e2e_test_counter{{test_id="{test_id}"}}')
+                # Note: OTel Collector adds namespace prefix "app_metrics_" and "_total" suffix for counters
+                result = prometheus_query(f'app_metrics_e2e_test_counter_total{{test_id="{test_id}"}}')
                 
                 if result["status"] == "success" and len(result["data"]["result"]) > 0:
                     metric_data = result["data"]["result"][0]
@@ -264,7 +265,7 @@ class TestMetricsFlow:
                 result = grafana_query(
                     "prometheus",  # Prometheus datasource UID
                     {
-                        "expr": f'e2e_test_counter{{test_id="{test_id}"}}',
+                        "expr": f'app_metrics_e2e_test_counter_total{{test_id="{test_id}"}}',
                         "refId": "A",
                         "format": "time_series"
                     }
@@ -449,7 +450,7 @@ class TestCorrelation:
         start_time = time.time()
         
         try:
-            result = prometheus_query(f'e2e_test_counter{{trace_id="{trace_id}"}}')
+            result = prometheus_query(f'app_metrics_e2e_test_counter_total{{trace_id="{trace_id}"}}')
             
             if result["status"] == "success" and len(result["data"]["result"]) > 0:
                 metric_data = result["data"]["result"][0]
@@ -518,7 +519,7 @@ class TestEndToEndLatency:
         
         while time.time() - send_time < max_wait:
             try:
-                result = prometheus_query(f'e2e_test_duration_sum{{test_id="{test_id}"}}')
+                result = prometheus_query(f'app_metrics_e2e_test_duration_sum{{test_id="{test_id}"}}')
                 
                 if result["status"] == "success" and len(result["data"]["result"]) > 0:
                     actual_latency = time.time() - send_time
