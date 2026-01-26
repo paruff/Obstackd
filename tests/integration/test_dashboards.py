@@ -19,6 +19,15 @@ GRAFANA_PASSWORD = os.getenv("GRAFANA_PASSWORD", "admin")
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DASHBOARD_DIR = os.path.join(PROJECT_ROOT, "config", "grafana", "dashboards")
 
+# Expected dashboard files
+DASHBOARD_FILES = [
+    "observability-stack-health.json",
+    "homeassistant-metrics.json",
+    "iot-devices-mqtt.json",
+    "application-performance.json",
+    "infrastructure-overview.json"
+]
+
 
 @pytest.fixture(scope="session")
 def grafana_base_url() -> str:
@@ -366,15 +375,7 @@ class TestDashboardFiles:
     
     def test_dashboard_files_exist(self):
         """Test that all dashboard JSON files exist in the repository."""
-        expected_files = [
-            "observability-stack-health.json",
-            "homeassistant-metrics.json",
-            "iot-devices-mqtt.json",
-            "application-performance.json",
-            "infrastructure-overview.json"
-        ]
-        
-        for filename in expected_files:
+        for filename in DASHBOARD_FILES:
             filepath = os.path.join(DASHBOARD_DIR, filename)
             assert os.path.exists(filepath), f"Dashboard file '{filename}' should exist"
         
@@ -382,15 +383,7 @@ class TestDashboardFiles:
     
     def test_dashboard_json_valid(self):
         """Test that all dashboard JSON files are valid."""
-        expected_files = [
-            "observability-stack-health.json",
-            "homeassistant-metrics.json",
-            "iot-devices-mqtt.json",
-            "application-performance.json",
-            "infrastructure-overview.json"
-        ]
-        
-        for filename in expected_files:
+        for filename in DASHBOARD_FILES:
             filepath = os.path.join(DASHBOARD_DIR, filename)
             
             with open(filepath, "r") as f:
@@ -405,16 +398,8 @@ class TestDashboardFiles:
     
     def test_dashboard_uids_unique(self):
         """Test that all dashboard UIDs are unique."""
-        dashboard_files = [
-            "observability-stack-health.json",
-            "homeassistant-metrics.json",
-            "iot-devices-mqtt.json",
-            "application-performance.json",
-            "infrastructure-overview.json"
-        ]
-        
         uids = []
-        for filename in dashboard_files:
+        for filename in DASHBOARD_FILES:
             filepath = os.path.join(DASHBOARD_DIR, filename)
             with open(filepath, "r") as f:
                 dashboard = json.load(f)
