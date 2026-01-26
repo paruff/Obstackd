@@ -1,0 +1,13 @@
+# Invalid: Duplicate datasource names
+# This should fail validation
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    url: http://prometheus:9090
+  
+  - name: Prometheus  # Duplicate name!
+    type: prometheus
+    url: http://prometheus2:9090
