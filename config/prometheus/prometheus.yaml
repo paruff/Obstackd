@@ -27,7 +27,7 @@ scrape_configs:
       - targets: ['localhost:9090']
     scrape_interval: 30s
 
-  # OpenTelemetry Collector
+  # OpenTelemetry Collector (internal metrics)
   - job_name: 'otel-collector'
     static_configs:
       - targets: ['otel-collector:8888']
@@ -53,6 +53,19 @@ scrape_configs:
         replacement: '${1}'
 
     # Scrape timeout and retry settings
+    scrape_timeout: 10s
+    honor_labels: true
+
+  # OpenTelemetry Collector (application metrics from Prometheus exporter)
+  - job_name: 'otel-app-metrics'
+    static_configs:
+      - targets: ['otel-collector:8889']
+        labels:
+          component: 'otel-collector'
+          service: 'application-metrics'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scheme: 'http'
     scrape_timeout: 10s
     honor_labels: true
 
