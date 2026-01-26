@@ -266,8 +266,7 @@ services:
     environment:
       - TZ=UTC
     volumes:
-      - ./config/homeassistant:/config:ro
-      - ./data/homeassistant:/data
+      - ./data/homeassistant:/config
     ports:
       - "8123:8123"
     deploy:

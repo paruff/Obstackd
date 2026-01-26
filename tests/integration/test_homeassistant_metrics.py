@@ -34,19 +34,18 @@ class TestHomeAssistantPrometheusEndpoint:
     ):
         """
         Given Home Assistant is running
-        When I query the API endpoint
+        When I query the Prometheus endpoint
         Then I should receive a successful response
         """
         response = requests.get(
-            f"{homeassistant_base_url}/api/",
+            f"{homeassistant_base_url}/api/prometheus",
             timeout=10
         )
         assert response.status_code == 200, \
-            f"Home Assistant API not accessible: {response.status_code}"
+            f"Home Assistant Prometheus endpoint not accessible: {response.status_code}"
         
-        # Verify it's Home Assistant
-        data = response.json()
-        assert "message" in data, "Response missing 'message' field"
+        # Verify we got some metrics
+        assert len(response.text) > 0, "Response should contain metrics"
     
     def test_homeassistant_prometheus_endpoint_exists(
         self,
