@@ -107,6 +107,22 @@ run_test_scenario() {
             echo -e "${BLUE}Running full pipeline acceptance test...${NC}"
             "${TEST_DIR}/test-otel-pipeline.sh"
             ;;
+        "integration-tests")
+            echo -e "${BLUE}Running integration tests...${NC}"
+            # Run pytest integration tests
+            if command -v pytest &> /dev/null; then
+                cd "${PROJECT_ROOT}"
+                pytest tests/integration/test_prometheus_scraping.py \
+                       tests/integration/test_otel_collector.py \
+                       tests/integration/test_grafana_integration.py \
+                       tests/integration/test_tempo_integration.py \
+                       tests/integration/test_loki_integration.py \
+                       -v --tb=short
+            else
+                echo -e "${RED}❌ pytest not found. Install with: pip install -r tests/integration/requirements.txt${NC}"
+                return 1
+            fi
+            ;;
         "quick-check")
             echo -e "${BLUE}Running quick health check...${NC}"
             # Quick check: just verify endpoints are reachable and returning expected data
@@ -226,7 +242,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --scenario SCENARIO     Test scenario to run (default: full-pipeline)"
-            echo "                          Options: full-pipeline, quick-check"
+            echo "                          Options: full-pipeline, integration-tests, quick-check"
             echo "  --start-services        Force start services before test"
             echo "  --no-start-services     Don't start services (assume already running)"
             echo "  --cleanup               Stop and clean up services after test"
@@ -234,6 +250,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Examples:"
             echo "  $0                                    # Run with auto service detection"
+            echo "  $0 --scenario integration-tests       # Run integration tests"
             echo "  $0 --scenario quick-check             # Run quick health check"
             echo "  $0 --cleanup                          # Run test and clean up after"
             echo "  $0 --start-services --cleanup         # Start, test, and clean up"
