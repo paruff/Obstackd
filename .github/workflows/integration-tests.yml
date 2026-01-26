@@ -36,27 +36,27 @@ jobs:
       - name: Wait for services to be ready
         run: |
           echo "Waiting for services to start..."
-          
+
           # Wait for Prometheus
           timeout 90 bash -c 'until curl -sf http://localhost:9090/-/ready; do echo "Waiting for Prometheus..."; sleep 2; done'
           echo "✅ Prometheus is ready"
-          
+
           # Wait for Grafana
           timeout 90 bash -c 'until curl -sf http://localhost:3000/api/health; do echo "Waiting for Grafana..."; sleep 2; done'
           echo "✅ Grafana is ready"
-          
+
           # Wait for Tempo
           timeout 90 bash -c 'until curl -sf http://localhost:3200/ready; do echo "Waiting for Tempo..."; sleep 2; done'
           echo "✅ Tempo is ready"
-          
+
           # Wait for Loki
           timeout 90 bash -c 'until curl -sf http://localhost:3100/ready; do echo "Waiting for Loki..."; sleep 2; done'
           echo "✅ Loki is ready"
-          
+
           # Wait for OTel Collector
           timeout 90 bash -c 'until curl -sf http://localhost:8888/metrics; do echo "Waiting for OTel Collector..."; sleep 2; done'
           echo "✅ OTel Collector is ready"
-          
+
           # Additional stabilization time for Prometheus to start scraping
           echo "Allowing Prometheus to start scraping..."
           sleep 20
@@ -106,22 +106,22 @@ jobs:
         run: |
           echo "=== Docker Compose Services ==="
           docker compose ps
-          
+
           echo "=== Prometheus Logs ==="
           docker compose logs --tail=100 prometheus
-          
+
           echo "=== Grafana Logs ==="
           docker compose logs --tail=100 grafana
-          
+
           echo "=== OTel Collector Logs ==="
           docker compose logs --tail=100 otel-collector
-          
+
           echo "=== Tempo Logs ==="
           docker compose logs --tail=100 tempo
-          
+
           echo "=== Loki Logs ==="
           docker compose logs --tail=100 loki
-          
+
           echo "=== Promtail Logs ==="
           docker compose logs --tail=100 promtail
 
