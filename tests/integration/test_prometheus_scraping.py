@@ -438,12 +438,13 @@ class TestPrometheusMetricCardinality:
             
             # Set a reasonable upper limit (this will depend on your environment)
             # For a basic setup, we expect < 10,000 series
-            max_expected_series = 10000
+            # Adjust this limit via MAX_SERIES_CARDINALITY env var for your environment
+            max_expected_series = int(os.getenv("MAX_SERIES_CARDINALITY", "10000"))
             
             assert total_series < max_expected_series, \
                 f"Metric cardinality is too high: {total_series} series (max: {max_expected_series})"
             
-            print(f"✅ Metric cardinality is reasonable: {total_series} series")
+            print(f"✅ Metric cardinality is reasonable: {total_series} series (max: {max_expected_series})")
         else:
             print("⚠️  No metric series found yet")
     

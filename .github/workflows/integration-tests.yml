@@ -36,33 +36,29 @@ jobs:
       - name: Wait for services to be ready
         run: |
           echo "Waiting for services to start..."
-          sleep 45
-          
-          echo "Checking service health..."
-          docker compose ps
           
           # Wait for Prometheus
-          timeout 60 bash -c 'until curl -sf http://localhost:9090/-/ready; do echo "Waiting for Prometheus..."; sleep 2; done'
+          timeout 90 bash -c 'until curl -sf http://localhost:9090/-/ready; do echo "Waiting for Prometheus..."; sleep 2; done'
           echo "✅ Prometheus is ready"
           
           # Wait for Grafana
-          timeout 60 bash -c 'until curl -sf http://localhost:3000/api/health; do echo "Waiting for Grafana..."; sleep 2; done'
+          timeout 90 bash -c 'until curl -sf http://localhost:3000/api/health; do echo "Waiting for Grafana..."; sleep 2; done'
           echo "✅ Grafana is ready"
           
           # Wait for Tempo
-          timeout 60 bash -c 'until curl -sf http://localhost:3200/ready; do echo "Waiting for Tempo..."; sleep 2; done'
+          timeout 90 bash -c 'until curl -sf http://localhost:3200/ready; do echo "Waiting for Tempo..."; sleep 2; done'
           echo "✅ Tempo is ready"
           
           # Wait for Loki
-          timeout 60 bash -c 'until curl -sf http://localhost:3100/ready; do echo "Waiting for Loki..."; sleep 2; done'
+          timeout 90 bash -c 'until curl -sf http://localhost:3100/ready; do echo "Waiting for Loki..."; sleep 2; done'
           echo "✅ Loki is ready"
           
           # Wait for OTel Collector
-          timeout 60 bash -c 'until curl -sf http://localhost:8888/metrics; do echo "Waiting for OTel Collector..."; sleep 2; done'
+          timeout 90 bash -c 'until curl -sf http://localhost:8888/metrics; do echo "Waiting for OTel Collector..."; sleep 2; done'
           echo "✅ OTel Collector is ready"
           
-          # Additional stabilization time
-          echo "Allowing services to stabilize..."
+          # Additional stabilization time for Prometheus to start scraping
+          echo "Allowing Prometheus to start scraping..."
           sleep 20
 
       - name: Run Prometheus scraping tests
