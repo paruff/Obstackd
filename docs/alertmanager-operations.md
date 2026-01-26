@@ -207,71 +207,38 @@ docker compose logs alertmanager --timestamps
 - If the metrics endpoint is misconfigured, update the Prometheus configuration
 - If it's a network issue, check Docker network connectivity
 
-### HighCPUUsage
+### OTelCollectorHighCPU
 
 **Severity:** Warning  
 **Category:** Resource
 
-**Description:** CPU usage on an instance has been above 80% for more than 10 minutes.
+**Description:** OpenTelemetry Collector is using more than 80% of a CPU core for over 10 minutes.
 
 **Investigation Steps:**
 
-1. Identify which service is using high CPU:
+1. Check OTel Collector CPU usage:
    ```bash
-   docker stats
+   docker stats otel-collector --no-stream
    ```
 
-2. Check service logs for errors or unusual activity:
+2. Review OTel Collector metrics:
    ```bash
-   docker compose logs <service-name> --tail=100
+   curl -s http://localhost:8888/metrics | grep cpu
    ```
 
-3. Review metrics in Grafana or Prometheus:
-   - Query: `rate(process_cpu_seconds_total[5m]) * 100`
+3. Check for backpressure or excessive load:
+   ```bash
+   curl -s http://localhost:8888/metrics | grep queue
+   ```
 
 **Resolution:**
 
 - If it's a temporary spike, monitor and wait for it to stabilize
 - If it's sustained, consider:
-  - Scaling the service (if applicable)
-  - Optimizing queries or workload
+  - Reviewing and optimizing OTel Collector pipeline configuration
+  - Reducing batch sizes to decrease processing load
   - Increasing resource limits in compose.yaml
-
-### CriticalCPUUsage
-
-**Severity:** Critical  
-**Category:** Resource
-
-**Description:** CPU usage on an instance has been above 90% for more than 5 minutes. Immediate action required.
-
-**Investigation Steps:**
-
-1. Immediately check which service is affected:
-   ```bash
-   docker stats --no-stream
-   ```
-
-2. Check for any runaway processes:
-   ```bash
-   docker compose top <service-name>
-   ```
-
-3. Review recent logs for errors:
-   ```bash
-   docker compose logs <service-name> --since 30m
-   ```
-
-**Resolution:**
-
-- Restart the affected service immediately:
-  ```bash
-  docker compose restart <service-name>
-  ```
-
-- If the issue persists, consider:
-  - Stopping non-critical services temporarily
-  - Increasing resource limits
-  - Investigating for bugs or performance issues
+  - Scaling horizontally (if applicable)
 
 ### OTelCollectorHighMemory
 

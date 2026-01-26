@@ -45,32 +45,6 @@ groups:
   - name: resource_utilization
     interval: 1m
     rules:
-      # High CPU usage alert
-      - alert: HighCPUUsage
-        expr: |
-          100 - (avg by (instance) (irate(process_cpu_seconds_total[5m])) * 100) < 20
-        for: 10m
-        labels:
-          severity: warning
-          category: resource
-        annotations:
-          summary: "High CPU usage on {{ $labels.instance }}"
-          description: "CPU usage on {{ $labels.instance }} has been above 80% for more than 10 minutes."
-          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#highcpuusage"
-
-      # Critical CPU usage
-      - alert: CriticalCPUUsage
-        expr: |
-          100 - (avg by (instance) (irate(process_cpu_seconds_total[5m])) * 100) < 10
-        for: 5m
-        labels:
-          severity: critical
-          category: resource
-        annotations:
-          summary: "Critical CPU usage on {{ $labels.instance }}"
-          description: "CPU usage on {{ $labels.instance }} has been above 90% for more than 5 minutes. Immediate action required."
-          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#criticalcpuusage"
-
       # High memory usage for OTel Collector
       - alert: OTelCollectorHighMemory
         expr: |
@@ -84,6 +58,20 @@ groups:
           summary: "OpenTelemetry Collector high memory usage"
           description: "OTel Collector is using more than 3GB of memory for over 5 minutes."
           runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#otelcollectorhighmemory"
+
+      # High CPU for OTel Collector (rate-based)
+      - alert: OTelCollectorHighCPU
+        expr: |
+          rate(process_cpu_seconds_total{job="otel-collector"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          category: resource
+          component: otel-collector
+        annotations:
+          summary: "OpenTelemetry Collector high CPU usage"
+          description: "OTel Collector is using more than 80% of a CPU core for over 10 minutes."
+          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#otelcollectorhighcpu"
 
   # Prometheus specific alerts
   - name: prometheus_health
@@ -117,7 +105,7 @@ groups:
       # Alert when Prometheus is approaching storage capacity
       - alert: PrometheusStorageAlmostFull
         expr: |
-          (1 - (prometheus_tsdb_storage_blocks_bytes / prometheus_tsdb_retention_limit_bytes)) * 100 < 20
+          prometheus_tsdb_storage_blocks_bytes / prometheus_tsdb_retention_limit_bytes > 0.8
         for: 30m
         labels:
           severity: warning
