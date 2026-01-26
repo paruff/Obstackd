@@ -7,6 +7,8 @@ data/tempo/*
 !data/tempo/.gitkeep
 data/loki/*
 !data/loki/.gitkeep
+data/alertmanager/*
+!data/alertmanager/.gitkeep
 
 # Secrets
 .grafana-secrets.env

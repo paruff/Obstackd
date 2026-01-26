@@ -146,11 +146,14 @@ services:
       - "--log.format=json"
     volumes:
       - ./config/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ./config/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ./data/prometheus:/prometheus
     ports:
       - "9090:9090"
     environment:
       - TZ=UTC
+    depends_on:
+      - alertmanager
     deploy:
       resources:
         limits:
@@ -171,6 +174,46 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "prometheus"
+    profiles: ["core"]
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://localhost:9093"
+      - "--cluster.listen-address="
+      - "--log.level=info"
+      - "--log.format=json"
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./data/alertmanager:/alertmanager
+    ports:
+      - "9093:9093"
+    environment:
+      - TZ=UTC
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "alertmanager"
     profiles: ["core"]
 
   grafana:

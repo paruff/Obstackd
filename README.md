@@ -7,6 +7,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 **Tech Stack:**
 - **OpenTelemetry Collector** (v0.99.0) - Telemetry data collection and routing
 - **Prometheus** (v2.50.1) - Metrics storage and querying
+- **Alertmanager** (v0.27.0) - Alert management and routing
 - **Tempo** (v2.3.1) - Distributed tracing backend
 - **Loki** (v2.9.4) - Log aggregation and querying
 - **Promtail** (v2.9.4) - Log collection agent
@@ -24,7 +25,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Docker** 20.10+ installed
 - **Docker Compose** v2.0+ installed
 - At least 4GB of free RAM
-- Ports 3000, 3100, 3200, 4317, 4318, 8888, 8889, 9080, 9090, 9095, 9096, 9411, 14250, 14268 available
+- Ports 3000, 3100, 3200, 4317, 4318, 8888, 8889, 9080, 9090, 9093, 9095, 9096, 9411, 14250, 14268 available
 
 ### Installation
 
@@ -36,7 +37,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 2. **Create data directories:**
    ```bash
-   mkdir -p data/prometheus data/grafana data/tempo data/loki
+   mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager
    chmod -R 777 data/
    ```
    
@@ -72,6 +73,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 | **OpenTelemetry**    | 8889  | App metrics (Prometheus)     | http://localhost:8889/metrics   |
 | **Promtail**         | 9080  | Log collection agent HTTP    | http://localhost:9080           |
 | **Prometheus**       | 9090  | Metrics storage & query UI   | http://localhost:9090           |
+| **Alertmanager**     | 9093  | Alert management UI          | http://localhost:9093           |
 | **Tempo**            | 9095  | Tempo gRPC                   | localhost:9095                  |
 | **Loki**             | 9096  | Loki gRPC                    | localhost:9096                  |
 | **Tempo**            | 9411  | Zipkin receiver              | http://localhost:9411           |
@@ -87,7 +89,12 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Username:** `admin`
 - **Password:** `admin`
 
-The Prometheus datasource is pre-configured and ready to use. Tempo and Loki datasources are also pre-configured for distributed tracing and log aggregation.
+The Prometheus, Tempo, Loki, and Alertmanager datasources are pre-configured and ready to use.
+
+### Alertmanager
+- **URL:** http://localhost:9093
+- Pre-configured with webhook receivers for testing
+- Alert rules automatically loaded from Prometheus
 
 ---
 
@@ -116,6 +123,12 @@ curl -f http://localhost:3100/ready
 
 # Check Promtail targets
 curl -f http://localhost:9080/targets
+
+# Check Alertmanager
+curl -f http://localhost:9093/-/healthy
+
+# View active alerts
+curl -s http://localhost:9093/api/v2/alerts | jq .
 ```
 
 ---

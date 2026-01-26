@@ -22,8 +22,9 @@ jobs:
       - name: Validate Prometheus config
         if: steps.check-prometheus.outputs.exists == 'true'
         run: |
+          # Mount all prometheus config files
           docker run --rm \
-            -v $PWD/config/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml \
+            -v $PWD/config/prometheus:/etc/prometheus \
             --entrypoint promtool \
             prom/prometheus:v2.50.1 \
             check config /etc/prometheus/prometheus.yaml
