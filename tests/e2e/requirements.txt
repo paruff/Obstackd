@@ -1,0 +1,13 @@
+# E2E Testing Requirements
+# Python dependencies for end-to-end telemetry flow testing
+
+pytest>=7.4.3
+pytest-bdd>=6.1.1
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# OpenTelemetry SDK for sending test telemetry
+opentelemetry-api>=1.22.0
+opentelemetry-sdk>=1.22.0
+opentelemetry-exporter-otlp-proto-http>=1.22.0
+opentelemetry-exporter-otlp-proto-grpc>=1.22.0
