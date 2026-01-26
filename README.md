@@ -275,6 +275,52 @@ docker compose --profile core up -d
 
 ---
 
+## Testing
+
+### Unit Tests for Configuration Validation
+
+The repository includes comprehensive unit tests that validate configuration files for all observability components. These tests catch configuration errors early in the development cycle, before deployment.
+
+**Validated components:**
+- OpenTelemetry Collector
+- Prometheus
+- Grafana
+- Tempo
+- Loki
+
+**Running unit tests:**
+
+```bash
+# Install dependencies
+pip install -r tests/unit/requirements.txt
+
+# Run all unit tests
+pytest tests/unit/
+
+# Run tests for a specific component
+pytest tests/unit/test_otel_config_validation.py
+pytest tests/unit/test_prometheus_config_validation.py
+pytest tests/unit/test_grafana_config_validation.py
+pytest tests/unit/test_tempo_config_validation.py
+pytest tests/unit/test_loki_config_validation.py
+```
+
+**What is validated:**
+- Valid YAML syntax
+- Required sections and fields
+- Port numbers in valid range
+- URL formats
+- Time duration formats
+- Component references
+- Pipeline configurations
+- Common misconfigurations
+
+**Test coverage:** 118 tests covering all configuration aspects
+
+For detailed documentation, see [tests/unit/README.md](tests/unit/README.md)
+
+---
+
 ## Observability Acceptance Test
 
 ### Purpose
