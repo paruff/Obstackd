@@ -8,6 +8,8 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **OpenTelemetry Collector** (v0.99.0) - Telemetry data collection and routing
 - **Prometheus** (v2.50.1) - Metrics storage and querying
 - **Tempo** (v2.3.1) - Distributed tracing backend
+- **Loki** (v2.9.4) - Log aggregation and querying
+- **Promtail** (v2.9.4) - Log collection agent
 - **Grafana** (v10.4.2) - Visualization and dashboards
 - **Docker Compose** - Service orchestration
 
@@ -22,7 +24,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Docker** 20.10+ installed
 - **Docker Compose** v2.0+ installed
 - At least 4GB of free RAM
-- Ports 3000, 3200, 4317, 4318, 8888, 8889, 9090, 9095, 9411, 14250, 14268 available
+- Ports 3000, 3100, 3200, 4317, 4318, 8888, 8889, 9080, 9090, 9095, 9096, 9411, 14250, 14268 available
 
 ### Installation
 
@@ -34,7 +36,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 2. **Create data directories:**
    ```bash
-   mkdir -p data/prometheus data/grafana data/tempo
+   mkdir -p data/prometheus data/grafana data/tempo data/loki
    chmod -R 777 data/
    ```
    
@@ -62,13 +64,16 @@ A **Docker Compose-based observability platform** that provides a complete monit
 | Service              | Port  | Purpose                      | Access URL                      |
 |----------------------|-------|------------------------------|---------------------------------|
 | **Grafana**          | 3000  | Visualization UI             | http://localhost:3000           |
+| **Loki**             | 3100  | Log aggregation HTTP API     | http://localhost:3100           |
 | **Tempo**            | 3200  | Tempo HTTP API               | http://localhost:3200           |
 | **OpenTelemetry**    | 4317  | OTLP gRPC receiver           | localhost:4317                  |
 | **OpenTelemetry**    | 4318  | OTLP HTTP receiver           | localhost:4318                  |
 | **OpenTelemetry**    | 8888  | Collector telemetry metrics  | http://localhost:8888/metrics   |
 | **OpenTelemetry**    | 8889  | App metrics (Prometheus)     | http://localhost:8889/metrics   |
+| **Promtail**         | 9080  | Log collection agent HTTP    | http://localhost:9080           |
 | **Prometheus**       | 9090  | Metrics storage & query UI   | http://localhost:9090           |
 | **Tempo**            | 9095  | Tempo gRPC                   | localhost:9095                  |
+| **Loki**             | 9096  | Loki gRPC                    | localhost:9096                  |
 | **Tempo**            | 9411  | Zipkin receiver              | http://localhost:9411           |
 | **Tempo**            | 14250 | Jaeger gRPC receiver         | localhost:14250                 |
 | **Tempo**            | 14268 | Jaeger HTTP receiver         | http://localhost:14268          |
@@ -82,7 +87,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Username:** `admin`
 - **Password:** `admin`
 
-The Prometheus datasource is pre-configured and ready to use.
+The Prometheus datasource is pre-configured and ready to use. Tempo and Loki datasources are also pre-configured for distributed tracing and log aggregation.
 
 ---
 
@@ -105,6 +110,12 @@ curl -f http://localhost:8888/metrics
 
 # Check OpenTelemetry Collector app metrics endpoint
 curl -f http://localhost:8889/metrics
+
+# Check Loki
+curl -f http://localhost:3100/ready
+
+# Check Promtail targets
+curl -f http://localhost:9080/targets
 ```
 
 ---
@@ -113,9 +124,9 @@ curl -f http://localhost:8889/metrics
 
 The system uses Docker Compose profiles to control which services run:
 
-| Profile | Services                                      | Purpose                  |
-|---------|-----------------------------------------------|--------------------------|
-| `core`  | otel-collector, tempo, prometheus, grafana    | Base observability stack |
+| Profile | Services                                                  | Purpose                  |
+|---------|-----------------------------------------------------------|--------------------------|
+| `core`  | otel-collector, tempo, loki, promtail, prometheus, grafana| Base observability stack |
 
 **To start with a specific profile:**
 ```bash
@@ -134,6 +145,10 @@ config/
 │   └── collector.yaml          # OpenTelemetry Collector config
 ├── tempo/
 │   └── tempo.yaml              # Tempo distributed tracing config
+├── loki/
+│   └── loki.yaml               # Loki log aggregation config
+├── promtail/
+│   └── promtail.yaml           # Promtail log collection config
 ├── prometheus/
 │   └── prometheus.yaml         # Prometheus scrape config
 └── grafana/
@@ -169,22 +184,32 @@ docker compose down -v
          ▼
 ┌─────────────────────┐
 │ OpenTelemetry       │
-│ Collector           │──────┬──────┐
-└──────────┬──────────┘      │      │
-           │                 │      │
-           │ metrics         │      │ traces
-           ▼                 │      ▼
-   ┌──────────────┐          │  ┌──────────────┐
-   │  Prometheus  │          │  │    Tempo     │
-   │   :9090      │          │  │    :3200     │
-   └──────┬───────┘          │  └──────┬───────┘
-          │                  │         │
-          │ datasource       │         │ datasource
-          ▼                  ▼         ▼
-     ┌──────────────────────────────────┐
-     │          Grafana                 │
-     │           :3000                  │
-     └──────────────────────────────────┘
+│ Collector           │──────┬──────┬──────┐
+└──────────┬──────────┘      │      │      │
+           │                 │      │      │
+           │ metrics         │      │      │ logs
+           ▼                 │      │      ▼
+   ┌──────────────┐          │      │  ┌──────────────┐
+   │  Prometheus  │          │      │  │     Loki     │◄─────┐
+   │   :9090      │          │      │  │    :3100     │      │
+   └──────┬───────┘          │      │  └──────┬───────┘      │
+          │                  │      │         │               │
+          │ datasource       │      │         │ datasource    │
+          ▼                  ▼      ▼         ▼               │
+     ┌──────────────────────────────────┐                     │
+     │          Grafana                 │                     │
+     │           :3000                  │                     │
+     └──────────────────────────────────┘                     │
+                                                              │
+┌─────────────────┐                                           │
+│ Docker Engine   │                                           │
+│ Container Logs  │────────────────────────────────────────┐  │
+└─────────────────┘                                        │  │
+                                                           ▼  │
+                                                    ┌──────────────┐
+                                                    │  Promtail    │
+                                                    │   :9080      │
+                                                    └──────────────┘
 ```
 
 ---
@@ -225,10 +250,10 @@ docker compose logs grafana
 docker compose down -v
 
 # Clean data directories
-rm -rf data/prometheus/* data/grafana/* data/tempo/*
+rm -rf data/prometheus/* data/grafana/* data/tempo/* data/loki/*
 
 # Recreate
-mkdir -p data/prometheus data/grafana data/tempo
+mkdir -p data/prometheus data/grafana data/tempo data/loki
 chmod -R 777 data/
 
 # Start fresh
@@ -341,11 +366,12 @@ jobs:
 
 ## Next Steps
 
-- **Add instrumented applications** to send telemetry (metrics & traces) to the OTLP endpoints
+- **Add instrumented applications** to send telemetry (metrics, traces, and logs) to the OTLP endpoints
 - **Create custom Grafana dashboards** in `config/grafana/dashboards/`
 - **Configure additional Prometheus scrape targets** in `config/prometheus/prometheus.yaml`
 - **Query traces in Grafana** using the Tempo datasource to visualize distributed traces
-- **Add Loki for logs** to complete the observability triangle (metrics, traces, logs)
+- **Query logs in Grafana** using the Loki datasource with LogQL to search and analyze logs
+- **Explore log-trace correlation** to debug issues across the full observability stack
 
 ---
 
