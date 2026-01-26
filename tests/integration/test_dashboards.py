@@ -15,6 +15,10 @@ GRAFANA_URL = os.getenv("GRAFANA_URL", "http://localhost:3000")
 GRAFANA_USER = os.getenv("GRAFANA_USER", "admin")
 GRAFANA_PASSWORD = os.getenv("GRAFANA_PASSWORD", "admin")
 
+# Get the project root directory dynamically
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DASHBOARD_DIR = os.path.join(PROJECT_ROOT, "config", "grafana", "dashboards")
+
 
 @pytest.fixture(scope="session")
 def grafana_base_url() -> str:
@@ -362,8 +366,6 @@ class TestDashboardFiles:
     
     def test_dashboard_files_exist(self):
         """Test that all dashboard JSON files exist in the repository."""
-        dashboard_dir = "/home/runner/work/Obstackd/Obstackd/config/grafana/dashboards"
-        
         expected_files = [
             "observability-stack-health.json",
             "homeassistant-metrics.json",
@@ -373,15 +375,13 @@ class TestDashboardFiles:
         ]
         
         for filename in expected_files:
-            filepath = os.path.join(dashboard_dir, filename)
+            filepath = os.path.join(DASHBOARD_DIR, filename)
             assert os.path.exists(filepath), f"Dashboard file '{filename}' should exist"
         
         print("✅ All dashboard files exist in repository")
     
     def test_dashboard_json_valid(self):
         """Test that all dashboard JSON files are valid."""
-        dashboard_dir = "/home/runner/work/Obstackd/Obstackd/config/grafana/dashboards"
-        
         expected_files = [
             "observability-stack-health.json",
             "homeassistant-metrics.json",
@@ -391,7 +391,7 @@ class TestDashboardFiles:
         ]
         
         for filename in expected_files:
-            filepath = os.path.join(dashboard_dir, filename)
+            filepath = os.path.join(DASHBOARD_DIR, filename)
             
             with open(filepath, "r") as f:
                 try:
@@ -405,8 +405,6 @@ class TestDashboardFiles:
     
     def test_dashboard_uids_unique(self):
         """Test that all dashboard UIDs are unique."""
-        dashboard_dir = "/home/runner/work/Obstackd/Obstackd/config/grafana/dashboards"
-        
         dashboard_files = [
             "observability-stack-health.json",
             "homeassistant-metrics.json",
@@ -417,7 +415,7 @@ class TestDashboardFiles:
         
         uids = []
         for filename in dashboard_files:
-            filepath = os.path.join(dashboard_dir, filename)
+            filepath = os.path.join(DASHBOARD_DIR, filename)
             with open(filepath, "r") as f:
                 dashboard = json.load(f)
                 uid = dashboard.get("uid")
