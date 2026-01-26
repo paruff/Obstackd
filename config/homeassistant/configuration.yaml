@@ -17,6 +17,7 @@ default_config:
 # Enable Prometheus metrics
 prometheus:
   namespace: homeassistant
+  requires_auth: false
 
 # HTTP configuration
 http:
@@ -62,15 +63,14 @@ sensor:
     display_options:
       - 'time'
       - 'date'
-      
-  - platform: template
-    sensors:
-      test_sensor_1:
-        friendly_name: "Test Sensor 1"
-        value_template: "{{ 42 }}"
+
+# Template sensors
+template:
+  - sensor:
+      - name: "Test Sensor 1"
+        state: "42"
         unit_of_measurement: 'units'
         
-      test_sensor_2:
-        friendly_name: "Test Sensor 2"
-        value_template: "{{ states('sensor.test_sensor_1') | int * 2 }}"
+      - name: "Test Sensor 2"
+        state: "{{ 84 }}"
         unit_of_measurement: 'units'

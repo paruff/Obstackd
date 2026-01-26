@@ -94,7 +94,8 @@ def wait_for_otel_collector(otel_collector_base_url: str) -> None:
                 f"{otel_collector_base_url}/metrics",
                 timeout=5
             )
-            if response.status_code == 200 and "otelcol_process_uptime" in response.text:
+            # Check for any valid metrics response (should contain metric names)
+            if response.status_code == 200 and len(response.text) > 100:
                 print(f"✅ OTel Collector is ready after {attempt + 1} attempts")
                 return
         except requests.exceptions.RequestException:

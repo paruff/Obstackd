@@ -271,13 +271,11 @@ class TestHomeAssistantMetricsInPrometheus:
         When I query for entity metrics
         Then the metric should have label 'instance'
         And the value should be greater than or equal to 0
-        """
-        # Try to find any homeassistant metric
-        result = prometheus_query('homeassistant_entity_available')
         
-        if result.get("status") != "success":
-            # Try alternative metric names
-            result = prometheus_query('{job="homeassistant"}')
+        Note: This test queries for homeassistant_entity_available which should
+        always be present for any Home Assistant instance with entities.
+        """
+        result = prometheus_query('homeassistant_entity_available')
         
         assert result.get("status") == "success", \
             f"Failed to query Home Assistant metrics: {result}"
@@ -285,14 +283,11 @@ class TestHomeAssistantMetricsInPrometheus:
         data = result.get("data", {})
         results = data.get("result", [])
         
-        # We should have at least some metrics
-        # If no entity metrics yet, at least check we can query the job
-        if len(results) == 0:
-            # Fall back to checking if job exists
-            up_result = prometheus_query('up{job="homeassistant"}')
-            assert up_result.get("status") == "success"
-            up_data = up_result.get("data", {}).get("result", [])
-            assert len(up_data) > 0, "Home Assistant job not found in Prometheus"
+        # We should have at least some entity availability metrics
+        # Even a minimal HA instance has zone.home and sun.sun entities
+        assert len(results) > 0, \
+            "No homeassistant_entity_available metrics found. " \
+            "This metric should always be present for HA instances with entities."
     
     @pytest.mark.slow  
     def test_homeassistant_metrics_have_required_labels(
