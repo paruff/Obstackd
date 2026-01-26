@@ -271,7 +271,8 @@ class TestPrometheusAllTargets:
         results = data.get("result", [])
         
         # Optional services that may not be running
-        optional_services = ["homeassistant"]
+        # otel-app-metrics only has samples when applications send OTLP telemetry
+        optional_services = ["homeassistant", "otel-app-metrics"]
         
         if len(results) > 0:
             core_zero_sample_targets = []
