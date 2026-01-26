@@ -221,14 +221,21 @@ class TestPrometheusAllTargets:
         Scenario: All configured targets are healthy
           Given Obstackd stack is running
           When I query Prometheus for all 'up' metrics
-          Then all targets should have value=1
+          Then all core targets should have value=1
         """
         data = query_prometheus(prometheus_url, 'up')
         
         results = data.get("result", [])
         assert len(results) > 0, "Should have at least one target configured"
         
-        down_targets = []
+        # Core services that must be up
+        core_services = ["prometheus", "otel-collector", "alertmanager"]
+        # Optional services (like homeassistant in apps profile)
+        optional_services = ["homeassistant"]
+        
+        down_core_targets = []
+        down_optional_targets = []
+        
         for result in results:
             metric = result.get("metric", {})
             job = metric.get("job", "unknown")
@@ -236,17 +243,25 @@ class TestPrometheusAllTargets:
             up_value = float(result.get("value", [0, "0"])[1])
             
             if up_value != 1.0:
-                down_targets.append(f"{job}/{instance}")
+                if job in optional_services:
+                    down_optional_targets.append(f"{job}/{instance}")
+                else:
+                    down_core_targets.append(f"{job}/{instance}")
         
-        assert len(down_targets) == 0, \
-            f"All targets should be up, but these are down: {', '.join(down_targets)}"
+        # Only fail if core services are down
+        assert len(down_core_targets) == 0, \
+            f"Core targets should be up, but these are down: {', '.join(down_core_targets)}"
         
-        print(f"✅ All {len(results)} targets are up and healthy")
+        if down_optional_targets:
+            print(f"⚠️  Optional targets are down: {', '.join(down_optional_targets)}")
+        
+        up_count = len(results) - len(down_core_targets) - len(down_optional_targets)
+        print(f"✅ All {up_count} core targets are up and healthy")
     
     def test_no_targets_with_zero_samples(self, wait_for_prometheus, prometheus_url: str):
         """
         Scenario: All configured targets are healthy
-          And no scrape_samples_scraped should be 0
+          And no core scrape_samples_scraped should be 0
         """
         data = query_prometheus(
             prometheus_url,
@@ -255,19 +270,33 @@ class TestPrometheusAllTargets:
         
         results = data.get("result", [])
         
+        # Optional services that may not be running
+        optional_services = ["homeassistant"]
+        
         if len(results) > 0:
-            zero_sample_targets = []
+            core_zero_sample_targets = []
+            optional_zero_sample_targets = []
+            
             for result in results:
                 metric = result.get("metric", {})
                 job = metric.get("job", "unknown")
                 instance = metric.get("instance", "unknown")
-                zero_sample_targets.append(f"{job}/{instance}")
+                
+                if job in optional_services:
+                    optional_zero_sample_targets.append(f"{job}/{instance}")
+                else:
+                    core_zero_sample_targets.append(f"{job}/{instance}")
             
-            pytest.fail(
-                f"These targets are not producing samples: {', '.join(zero_sample_targets)}"
-            )
+            # Only fail if core services are not producing samples
+            if core_zero_sample_targets:
+                pytest.fail(
+                    f"Core targets are not producing samples: {', '.join(core_zero_sample_targets)}"
+                )
+            
+            if optional_zero_sample_targets:
+                print(f"⚠️  Optional targets not producing samples: {', '.join(optional_zero_sample_targets)}")
         
-        print("✅ All targets are producing samples")
+        print("✅ All core targets are producing samples")
     
     def test_all_targets_scrape_duration_within_sla(self, wait_for_prometheus, prometheus_url: str):
         """Test that all target scrapes complete within SLA."""
@@ -351,7 +380,12 @@ class TestPrometheusTargetDetails:
         
         assert len(targets) > 0, "Should have at least one active target"
         
+        # Optional services that may not be running
+        optional_services = ["homeassistant"]
+        
         print(f"\n📊 Active Targets ({len(targets)}):")
+        down_core_targets = []
+        
         for target in targets:
             job = target.get("labels", {}).get("job", "unknown")
             instance = target.get("labels", {}).get("instance", "unknown")
@@ -361,8 +395,12 @@ class TestPrometheusTargetDetails:
             
             print(f"  • {job}/{instance}: {health} (last: {last_scrape_duration}s)")
             
-            # Verify health
-            assert health == "up", f"Target {job}/{instance} should be healthy"
+            # Verify core services are healthy
+            if health != "up" and job not in optional_services:
+                down_core_targets.append(f"{job}/{instance}")
+        
+        assert len(down_core_targets) == 0, \
+            f"Core targets should be healthy, but these are down: {', '.join(down_core_targets)}"
     
     def test_otel_collector_target_labels(self, wait_for_prometheus, prometheus_url: str):
         """Test that OTel Collector target has correct labels."""

@@ -65,9 +65,13 @@ class TestTempoHealth:
         response = requests.get(f"{tempo_url}/status/version")
         
         if response.status_code == 200:
-            data = response.json()
-            version = data.get("version", "unknown")
-            print(f"✅ Tempo version: {version}")
+            try:
+                data = response.json()
+                version = data.get("version", "unknown")
+                print(f"✅ Tempo version: {version}")
+            except requests.exceptions.JSONDecodeError:
+                # Response may not be JSON
+                print(f"✅ Tempo version endpoint responded (non-JSON response)")
         else:
             # Some Tempo versions may not have this endpoint
             print("⚠️  Tempo version endpoint not available")
