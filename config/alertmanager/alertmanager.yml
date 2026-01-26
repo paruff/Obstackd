@@ -1,3 +1,4 @@
+---
 # Alertmanager Configuration
 # https://prometheus.io/docs/alerting/latest/configuration/
 
@@ -18,19 +19,19 @@ templates:
 route:
   # Default receiver for all alerts
   receiver: 'default-webhook'
-  
+
   # Group alerts by these labels
   group_by: ['alertname', 'cluster', 'service']
-  
+
   # How long to wait before sending initial notification for a group
   group_wait: 30s
-  
+
   # How long to wait before sending notification about new alerts added to group
   group_interval: 5m
-  
+
   # How long to wait before re-sending a notification
   repeat_interval: 4h
-  
+
   # Child routes for specific alert routing
   routes:
     # Critical alerts - immediate notification
@@ -40,7 +41,7 @@ route:
       group_wait: 10s
       repeat_interval: 1h
       continue: false
-    
+
     # Warning alerts - standard notification
     - match:
         severity: warning
@@ -48,7 +49,7 @@ route:
       group_wait: 30s
       repeat_interval: 4h
       continue: false
-    
+
     # Info alerts - batched notification
     - match:
         severity: info
@@ -65,13 +66,13 @@ inhibit_rules:
     target_match:
       severity: 'warning'
     equal: ['alertname', 'cluster', 'service']
-  
+
   - source_match:
       severity: 'critical'
     target_match:
       severity: 'info'
     equal: ['alertname', 'cluster', 'service']
-  
+
   # Inhibit info if same alertname with warning severity exists
   - source_match:
       severity: 'warning'
@@ -87,7 +88,7 @@ receivers:
       - url: 'http://host.docker.internal:5001/webhook'
         send_resolved: true
         max_alerts: 0
-  
+
   # Critical alerts receiver
   - name: 'critical-alerts'
     webhook_configs:
@@ -101,7 +102,7 @@ receivers:
     #     title: '{{ .GroupLabels.alertname }}'
     #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
     #     send_resolved: true
-  
+
   # Warning alerts receiver
   - name: 'warning-alerts'
     webhook_configs:
@@ -114,7 +115,7 @@ receivers:
     #     headers:
     #       Subject: 'Warning Alert: {{ .GroupLabels.alertname }}'
     #     send_resolved: true
-  
+
   # Info alerts receiver
   - name: 'info-alerts'
     webhook_configs:
