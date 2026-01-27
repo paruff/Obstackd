@@ -50,8 +50,8 @@ initialize_test() {
 }
 
 # Test Result Tracking
-declare -A TEST_RESULTS
-declare -A TEST_DURATIONS
+TESTS_PASSED=0
+TESTS_FAILED=0
 START_TIME=$(date +%s)
 
 record_test_result() {
@@ -60,8 +60,13 @@ record_test_result() {
     local duration=$3
     local message=$4
     
-    TEST_RESULTS["${test_id}"]="${result}"
-    TEST_DURATIONS["${test_id}"]="${duration}"
+    if [ "$result" = "PASS" ]; then
+        ((TESTS_PASSED++))
+        echo -e "${GREEN}✅ ${test_id}: ${message} (${duration}s)${NC}"
+    else
+        ((TESTS_FAILED++))
+        echo -e "${RED}❌ ${test_id}: ${message} (${duration}s)${NC}"
+    fi
     
     echo "TEST: ${test_id} | RESULT: ${result} | DURATION: ${duration}s | MESSAGE: ${message}" \
         >> "${REPORT_DIR}/test-results.csv"
@@ -352,31 +357,12 @@ generate_test_report() {
     
     echo -e "\n${BLUE}📊 Generating Test Report${NC}"
     
-    # Calculate statistics
-    local total_tests=${#TEST_RESULTS[@]}
-    local passed_tests=0
-    local failed_tests=0
-    
-    # Count passed and failed tests
-    for test_id in "${!TEST_RESULTS[@]}"; do
-        if [[ "${TEST_RESULTS[$test_id]}" == "PASS" ]]; then
-            passed_tests=$((passed_tests + 1))
-        else
-            failed_tests=$((failed_tests + 1))
-        fi
-    done
-    
-    # Calculate success rate
+    # Use the counters we already have
+    local total_tests=$((TESTS_PASSED + TESTS_FAILED))
     local success_rate=0
     if [[ $total_tests -gt 0 ]]; then
-        success_rate=$(( (passed_tests * 100) / total_tests ))
+        success_rate=$(( (TESTS_PASSED * 100) / total_tests ))
     fi
-    
-    # Generate test results list
-    local results_list=""
-    for test_id in "${!TEST_RESULTS[@]}"; do
-        results_list="${results_list}- ${test_id}: ${TEST_RESULTS[$test_id]} (${TEST_DURATIONS[$test_id]}s)\n"
-    done
     
     # Generate summary report
     cat > "${REPORT_DIR}/summary.md" <<EOF
@@ -387,12 +373,12 @@ generate_test_report() {
 - **Execution Time**: ${TIMESTAMP}
 - **Total Duration**: ${total_duration} seconds
 - **Total Tests**: ${total_tests}
-- **Tests Passed**: ${passed_tests}
-- **Tests Failed**: ${failed_tests}
+- **Tests Passed**: ${TESTS_PASSED}
+- **Tests Failed**: ${TESTS_FAILED}
 - **Success Rate**: ${success_rate}%
 
 ## Test Results
-$(echo -e "${results_list}")
+See detailed results in: test-results.csv
 
 ## Environment
 $(cat "${REPORT_DIR}/environment.txt")
@@ -403,56 +389,28 @@ $(cat "${REPORT_DIR}/environment.txt")
 - Detailed Log: \`test-execution.log\`
 
 ## Conclusion
-$(if [[ ${failed_tests} -eq 0 ]]; then
+$(if [[ ${TESTS_FAILED} -eq 0 ]]; then
     echo "✅ **ALL TESTS PASSED** - Observability pipeline is fully functional"
 else
     echo "❌ **TESTS FAILED** - Review failure details above"
 fi)
 EOF
     
-    # Generate JSON report results array
-    local json_results=""
-    for test_id in "${!TEST_RESULTS[@]}"; do
-        if [[ -n "${json_results}" ]]; then
-            json_results="${json_results},"$'\n'
-        fi
-        json_results="${json_results}    {\"test_id\": \"${test_id}\", \"result\": \"${TEST_RESULTS[$test_id]}\", \"duration\": ${TEST_DURATIONS[$test_id]}}"
-    done
-    
     # Generate JSON report for CI/CD integration
-    local otel_healthy="false"
-    local prom_scraping="false"
-    local grafana_ds="false"
-    local e2e_pass="false"
-    
-    [[ -n "${TEST_RESULTS[COMP-HEALTH-OTEL]:-}" && "${TEST_RESULTS[COMP-HEALTH-OTEL]}" == "PASS" ]] && otel_healthy="true"
-    [[ -n "${TEST_RESULTS[COMP-HEALTH-PROM]:-}" && "${TEST_RESULTS[COMP-HEALTH-PROM]}" == "PASS" ]] && prom_scraping="true"
-    [[ -n "${TEST_RESULTS[COMP-HEALTH-GRAFANA-DS]:-}" && "${TEST_RESULTS[COMP-HEALTH-GRAFANA-DS]}" == "PASS" ]] && grafana_ds="true"
-    [[ -n "${TEST_RESULTS[E2E-OTEL-GRAFANA]:-}" && "${TEST_RESULTS[E2E-OTEL-GRAFANA]}" == "PASS" ]] && e2e_pass="true"
-    
     cat > "${REPORT_DIR}/report.json" <<EOF
 {
   "test_suite": "observability_pipeline_acceptance",
   "timestamp": "${TIMESTAMP}",
   "duration_seconds": ${total_duration},
   "total_tests": ${total_tests},
-  "passed_tests": ${passed_tests},
-  "failed_tests": ${failed_tests},
-  "success_rate": ${success_rate},
-  "results": [
-${json_results}
-  ],
-  "e2e_validation": {
-    "otel_collector_healthy": ${otel_healthy},
-    "prometheus_scraping": ${prom_scraping},
-    "grafana_datasource_configured": ${grafana_ds},
-    "otel_metrics_in_grafana": ${e2e_pass}
-  }
+  "passed_tests": ${TESTS_PASSED},
+  "failed_tests": ${TESTS_FAILED},
+  "success_rate": ${success_rate}
 }
 EOF
     
     # Create success/failure marker
-    if [[ ${failed_tests} -eq 0 ]]; then
+    if [[ ${TESTS_FAILED} -eq 0 ]]; then
         touch "${SUCCESS_FILE}"
         echo -e "\n${GREEN}========================================${NC}"
         echo -e "${GREEN}✅ ACCEPTANCE TEST PASSED${NC}"

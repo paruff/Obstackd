@@ -262,6 +262,33 @@ services:
         tag: "grafana"
     profiles: ["core"]
 
+  # Demo application that generates telemetry for testing
+  telemetry-generator:
+    build:
+      context: ./apps/telemetry-generator
+      dockerfile: Dockerfile
+    container_name: telemetry-generator
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=telemetry-generator
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "telemetry-generator"
+    profiles: ["apps"]
 
 networks:
   default:
