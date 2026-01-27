@@ -1,0 +1,46 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+server {
+  http {
+    listen_address = "0.0.0.0"
+    listen_port    = 12345
+  }
+}
+
+loki.source.docker "containers" {
+  host           = "unix:///var/run/docker.sock"
+  positions_path = "/var/lib/alloy/positions.yaml"
+  labels = {
+    job = "docker"
+  }
+  forward_to = [loki.process.containers.receiver]
+}
+
+loki.process "containers" {
+  # Parse Docker log entries and enrich with container metadata
+  stage.docker {}
+
+  stage.labels {
+    values = {
+      stream          = "stream"
+      container       = "container_name"
+      container_id    = "container_id"
+      compose_service = "container_label_com_docker_compose_service"
+      compose_project = "container_label_com_docker_compose_project"
+    }
+  }
+
+  forward_to = [loki.write.loki.receiver]
+}
+
+loki.write "loki" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+    tls_config {
+      insecure_skip_verify = true
+    }
+  }
+}

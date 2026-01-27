@@ -1,7 +1,7 @@
 #!/bin/bash
 # End-to-End Loki Log Aggregation Acceptance Test
 # Test ID: OBS-ACCEPTANCE-LOKI-001
-# Validates that container logs are collected by Promtail and queryable in Loki
+# Validates that container logs are collected by Grafana Alloy and queryable in Loki
 
 set -euo pipefail
 
@@ -89,34 +89,34 @@ check_loki_health() {
     return 0
 }
 
-check_promtail_health() {
+check_alloy_health() {
     local start=$(date +%s)
-    local test_id="COMP-HEALTH-PROMTAIL"
+    local test_id="COMP-HEALTH-ALLOY"
     
-    echo -e "\n${BLUE}[${test_id}] Checking Promtail Health${NC}"
+    echo -e "\n${BLUE}[${test_id}] Checking Grafana Alloy Health${NC}"
     
-    # Check targets endpoint
-    local targets_output
-    targets_output=$(curl -s -m 10 "http://localhost:9080/targets" 2>/dev/null)
-    if [[ -z "${targets_output}" ]]; then
-        echo -e "${RED}✗ Promtail targets endpoint unreachable${NC}"
-        record_test_result "${test_id}" "FAIL" $(( $(date +%s) - start )) "Promtail unreachable"
+    # Check metrics endpoint for Loki docker source activity
+    local metrics_output
+    metrics_output=$(curl -s -m 10 "http://localhost:12345/metrics" 2>/dev/null)
+    if [[ -z "${metrics_output}" ]]; then
+        echo -e "${RED}✗ Alloy metrics endpoint unreachable${NC}"
+        record_test_result "${test_id}" "FAIL" $(( $(date +%s) - start )) "Alloy unreachable"
         return 1
     fi
     
-    # Check if Promtail is discovering targets
-    local active_targets
-    active_targets=$(echo "${targets_output}" | jq -r '.activeTargets | length' 2>/dev/null || echo "0")
+    # Count docker source metrics as a proxy for active discovery
+    local active_sources
+    active_sources=$(echo "${metrics_output}" | grep -c "loki_source_docker" || true)
     
-    echo "  Active targets discovered: ${active_targets}"
+    echo "  Loki docker source metrics lines: ${active_sources}"
     
-    if [[ "${active_targets}" -gt 0 ]]; then
-        echo -e "${GREEN}✓ Promtail is discovering containers (${active_targets} targets)${NC}"
-        record_test_result "${test_id}" "PASS" $(( $(date +%s) - start )) "Promtail discovering ${active_targets} targets"
+    if [[ "${active_sources}" -gt 0 ]]; then
+        echo -e "${GREEN}✓ Alloy is scraping Docker logs${NC}"
+        record_test_result "${test_id}" "PASS" $(( $(date +%s) - start )) "Alloy docker source active"
         return 0
     else
-        echo -e "${YELLOW}⚠ Promtail has no active targets yet${NC}"
-        record_test_result "${test_id}" "WARN" $(( $(date +%s) - start )) "No active targets"
+        echo -e "${YELLOW}⚠ Alloy metrics exposed but no docker source activity yet${NC}"
+        record_test_result "${test_id}" "WARN" $(( $(date +%s) - start )) "No docker source activity"
         return 0
     fi
 }
@@ -386,7 +386,7 @@ main() {
     
     # Run health checks
     check_loki_health || overall_result=1
-    check_promtail_health || overall_result=1
+    check_alloy_health || overall_result=1
     
     # Run functional tests
     test_log_ingestion || overall_result=1

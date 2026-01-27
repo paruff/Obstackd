@@ -95,18 +95,19 @@ services:
         tag: "loki"
     profiles: ["core"]
 
-  promtail:
-    image: grafana/promtail:3.1.1
-    container_name: promtail
+  alloy:
+    image: grafana/alloy:1.1.0
+    container_name: alloy
     restart: unless-stopped
     command:
-      - "--config.file=/etc/promtail/promtail.yaml"
+      - "run"
+      - "--config.file=/etc/alloy/config.river"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./config/promtail/promtail.yaml:/etc/promtail/promtail.yaml:ro
+      - ./config/alloy/config.river:/etc/alloy/config.river:ro
+      - ./data/alloy:/var/lib/alloy
     ports:
-      - "9080:9080"   # Promtail HTTP
+      - "12345:12345"   # Alloy HTTP/metrics
     environment:
       - TZ=UTC
     depends_on:
@@ -125,7 +126,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-        tag: "promtail"
+        tag: "alloy"
     profiles: ["core"]
 
   prometheus:

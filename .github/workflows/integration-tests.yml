@@ -122,8 +122,8 @@ jobs:
           echo "=== Loki Logs ==="
           docker compose logs --tail=100 loki
 
-          echo "=== Promtail Logs ==="
-          docker compose logs --tail=100 promtail
+          echo "=== Alloy Logs ==="
+          docker compose logs --tail=100 alloy
 
       - name: Shutdown services
         if: always()

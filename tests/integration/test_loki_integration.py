@@ -267,7 +267,7 @@ class TestLokiLogIngestion:
     
     def test_loki_can_receive_logs(self, wait_for_loki):
         """Test that Loki is ready to receive logs."""
-        # In this setup, logs come from Promtail and OTel Collector
+        # In this setup, logs come from Grafana Alloy and the OTel Collector
         # We just verify Loki is ready
         
         response = requests.get("http://localhost:3100/ready", timeout=5)
@@ -289,37 +289,36 @@ class TestLokiDataRetention:
         print("✅ Loki storage is accessible")
 
 
-class TestPromtailIntegration:
-    """Test Promtail integration with Loki."""
+class TestAlloyIntegration:
+    """Test Grafana Alloy integration with Loki."""
     
-    def test_promtail_is_running(self):
-        """Test that Promtail is running and accessible."""
+    def test_alloy_is_running(self):
+        """Test that Alloy is running and accessible."""
         import socket
         
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(5)
         
         try:
-            result = sock.connect_ex(('localhost', 9080))
-            assert result == 0, "Promtail HTTP port 9080 should be open"
-            print("✅ Promtail is running (port 9080 is open)")
+            result = sock.connect_ex(('localhost', 12345))
+            assert result == 0, "Alloy HTTP port 12345 should be open"
+            print("✅ Alloy is running (port 12345 is open)")
         finally:
             sock.close()
     
-    def test_promtail_metrics_endpoint(self):
-        """Test that Promtail exposes metrics."""
-        response = requests.get("http://localhost:9080/metrics", timeout=10)
+    def test_alloy_metrics_endpoint(self):
+        """Test that Alloy exposes metrics."""
+        response = requests.get("http://localhost:12345/metrics", timeout=10)
         
         if response.status_code == 200:
             metrics = response.text
             
-            # Check for Promtail-specific metrics
-            assert len(metrics) > 0, "Promtail should expose metrics"
+            # Check for Alloy/Loki pipeline metrics
+            assert len(metrics) > 0, "Alloy should expose metrics"
             
-            # Look for key Promtail metrics
-            if "promtail_" in metrics:
-                print("✅ Promtail metrics endpoint is available")
+            if "loki_source_docker" in metrics or "alloy_" in metrics:
+                print("✅ Alloy metrics endpoint is available")
             else:
-                print("⚠️  Promtail metrics may not be fully initialized yet")
+                print("⚠️  Alloy metrics may not be fully initialized yet")
         else:
-            print("⚠️  Promtail metrics endpoint not accessible")
+            print("⚠️  Alloy metrics endpoint not accessible")

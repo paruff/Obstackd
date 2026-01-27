@@ -2,10 +2,10 @@
 
 ## Overview
 
-Grafana Loki provides centralized log aggregation and query capabilities for the observability stack. It ingests logs from containers via Promtail and from applications via the OpenTelemetry Collector, storing them efficiently for querying through Grafana using LogQL.
+Grafana Loki provides centralized log aggregation and query capabilities for the observability stack. It ingests logs from containers via Grafana Alloy and from applications via the OpenTelemetry Collector, storing them efficiently for querying through Grafana using LogQL.
 
 **Architecture Note:** Logs are collected through two primary paths:
-1. **Container logs**: Promtail scrapes Docker container logs and forwards them to Loki
+1. **Container logs**: Grafana Alloy scrapes Docker container logs and forwards them to Loki
 2. **Application logs**: Applications send structured logs via OTLP to the OpenTelemetry Collector, which forwards them to Loki
 
 ## Access Points
@@ -14,25 +14,25 @@ Grafana Loki provides centralized log aggregation and query capabilities for the
 - **Loki Ready Endpoint**: http://localhost:3100/ready
 - **Loki Metrics**: http://localhost:3100/metrics
 - **Loki gRPC**: localhost:9096
-- **Promtail HTTP**: http://localhost:9080
+- **Alloy Metrics**: http://localhost:12345/metrics
 - **OTLP** (for app logs, via OTel Collector): localhost:4317 (gRPC), localhost:4318 (HTTP)
 
 ## Quick Start
 
-### Deploy Loki and Promtail
+### Deploy Loki and Alloy
 
 ```bash
-# Start the full observability stack (includes Loki and Promtail)
+# Start the full observability stack (includes Loki and Alloy)
 docker compose --profile core up -d
 
-# Check Loki status
-docker compose ps loki promtail
+# Check Loki and Alloy status
+docker compose ps loki alloy
 
 # Verify Loki is ready
 curl http://localhost:3100/ready
 
-# Check Promtail targets
-curl -s http://localhost:9080/targets | jq '.activeTargets'
+# Check Alloy metrics
+curl -s http://localhost:12345/metrics | grep loki_source_docker | head -5
 ```
 
 ### Query Logs
