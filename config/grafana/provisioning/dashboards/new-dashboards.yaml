@@ -1,0 +1,26 @@
+apiVersion: 1
+
+providers:
+  # Platform dashboards - for observability stack monitoring
+  - name: 'platform'
+    orgId: 1
+    folder: 'Platform'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards/platform
+      foldersFromFilesStructure: false
+
+  # Service dashboards - for application monitoring
+  - name: 'services'
+    orgId: 1
+    folder: 'Services'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards/services
+      foldersFromFilesStructure: false

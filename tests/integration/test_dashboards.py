@@ -18,13 +18,38 @@ GRAFANA_PASSWORD = os.getenv("GRAFANA_PASSWORD", "admin")
 # Get the project root directory dynamically
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DASHBOARD_DIR = os.path.join(PROJECT_ROOT, "config", "grafana", "dashboards")
+PLATFORM_DASHBOARD_DIR = os.path.join(PROJECT_ROOT, "dashboards", "platform")
+SERVICE_DASHBOARD_DIR = os.path.join(PROJECT_ROOT, "dashboards", "services")
 
-# Expected dashboard files
+# Expected dashboard files (legacy location)
 DASHBOARD_FILES = [
     "observability-stack-health.json",
     "iot-devices-mqtt.json",
     "application-performance.json",
     "infrastructure-overview.json"
+]
+
+# New platform dashboards
+PLATFORM_DASHBOARD_FILES = [
+    "global-health.json",
+    "prometheus-overview.json",
+    "loki-overview.json",
+    "tempo-overview.json",
+    "alloy-overview.json",
+    "alertmanager-overview.json",
+    "storage-capacity.json",
+    "ingestion-health.json"
+]
+
+# New service dashboards
+SERVICE_DASHBOARD_FILES = [
+    "service-overview.json",
+    "service-latency.json",
+    "service-errors.json",
+    "service-saturation.json",
+    "service-debug.json",
+    "service-slo.json",
+    "service-capacity.json"
 ]
 
 
@@ -378,3 +403,127 @@ class TestDashboardFiles:
                 uids.append(uid)
         
         print(f"✅ All {len(uids)} dashboard UIDs are unique")
+
+
+class TestNewPlatformDashboards:
+    """Test new platform dashboard JSON files in the repository."""
+    
+    def test_platform_dashboard_files_exist(self):
+        """Test that all platform dashboard JSON files exist."""
+        for filename in PLATFORM_DASHBOARD_FILES:
+            filepath = os.path.join(PLATFORM_DASHBOARD_DIR, filename)
+            assert os.path.exists(filepath), f"Platform dashboard file '{filename}' should exist at {filepath}"
+        
+        print(f"✅ All {len(PLATFORM_DASHBOARD_FILES)} platform dashboard files exist")
+    
+    def test_platform_dashboard_json_valid(self):
+        """Test that all platform dashboard JSON files are valid."""
+        for filename in PLATFORM_DASHBOARD_FILES:
+            filepath = os.path.join(PLATFORM_DASHBOARD_DIR, filename)
+            
+            with open(filepath, "r") as f:
+                try:
+                    dashboard = json.load(f)
+                    assert "title" in dashboard, f"Dashboard '{filename}' should have a title"
+                    assert "panels" in dashboard, f"Dashboard '{filename}' should have panels"
+                    assert "uid" in dashboard, f"Dashboard '{filename}' should have a uid"
+                    assert dashboard["uid"].startswith("platform-"), f"Dashboard '{filename}' uid should start with 'platform-'"
+                    
+                    # Check template variables
+                    templating = dashboard.get("templating", {})
+                    variables = templating.get("list", [])
+                    var_names = [v.get("name", "") for v in variables]
+                    assert "datasource" in var_names, f"Dashboard '{filename}' should have datasource variable"
+                    
+                except json.JSONDecodeError as e:
+                    pytest.fail(f"Platform dashboard '{filename}' has invalid JSON: {e}")
+        
+        print(f"✅ All {len(PLATFORM_DASHBOARD_FILES)} platform dashboard JSON files are valid")
+    
+    def test_platform_dashboard_uids_unique(self):
+        """Test that all platform dashboard UIDs are unique."""
+        uids = []
+        for filename in PLATFORM_DASHBOARD_FILES:
+            filepath = os.path.join(PLATFORM_DASHBOARD_DIR, filename)
+            with open(filepath, "r") as f:
+                dashboard = json.load(f)
+                uid = dashboard.get("uid")
+                assert uid, f"Dashboard '{filename}' should have a UID"
+                assert uid not in uids, f"Dashboard UID '{uid}' is not unique"
+                uids.append(uid)
+        
+        print(f"✅ All {len(uids)} platform dashboard UIDs are unique")
+
+
+class TestNewServiceDashboards:
+    """Test new service dashboard JSON files in the repository."""
+    
+    def test_service_dashboard_files_exist(self):
+        """Test that all service dashboard JSON files exist."""
+        for filename in SERVICE_DASHBOARD_FILES:
+            filepath = os.path.join(SERVICE_DASHBOARD_DIR, filename)
+            assert os.path.exists(filepath), f"Service dashboard file '{filename}' should exist at {filepath}"
+        
+        print(f"✅ All {len(SERVICE_DASHBOARD_FILES)} service dashboard files exist")
+    
+    def test_service_dashboard_json_valid(self):
+        """Test that all service dashboard JSON files are valid."""
+        for filename in SERVICE_DASHBOARD_FILES:
+            filepath = os.path.join(SERVICE_DASHBOARD_DIR, filename)
+            
+            with open(filepath, "r") as f:
+                try:
+                    dashboard = json.load(f)
+                    assert "title" in dashboard, f"Dashboard '{filename}' should have a title"
+                    assert "panels" in dashboard, f"Dashboard '{filename}' should have panels"
+                    assert "uid" in dashboard, f"Dashboard '{filename}' should have a uid"
+                    assert dashboard["uid"].startswith("service-"), f"Dashboard '{filename}' uid should start with 'service-'"
+                    
+                    # Check template variables - service dashboards should have service and instance
+                    templating = dashboard.get("templating", {})
+                    variables = templating.get("list", [])
+                    var_names = [v.get("name", "") for v in variables]
+                    assert "datasource" in var_names, f"Dashboard '{filename}' should have datasource variable"
+                    assert "service" in var_names, f"Dashboard '{filename}' should have service variable"
+                    
+                except json.JSONDecodeError as e:
+                    pytest.fail(f"Service dashboard '{filename}' has invalid JSON: {e}")
+        
+        print(f"✅ All {len(SERVICE_DASHBOARD_FILES)} service dashboard JSON files are valid")
+    
+    def test_service_dashboard_uids_unique(self):
+        """Test that all service dashboard UIDs are unique."""
+        uids = []
+        for filename in SERVICE_DASHBOARD_FILES:
+            filepath = os.path.join(SERVICE_DASHBOARD_DIR, filename)
+            with open(filepath, "r") as f:
+                dashboard = json.load(f)
+                uid = dashboard.get("uid")
+                assert uid, f"Dashboard '{filename}' should have a UID"
+                assert uid not in uids, f"Dashboard UID '{uid}' is not unique"
+                uids.append(uid)
+        
+        print(f"✅ All {len(uids)} service dashboard UIDs are unique")
+    
+    def test_service_overview_has_golden_signals(self):
+        """Test that service-overview.json includes Golden Signals panels."""
+        filepath = os.path.join(SERVICE_DASHBOARD_DIR, "service-overview.json")
+        
+        with open(filepath, "r") as f:
+            dashboard = json.load(f)
+            panels = dashboard.get("panels", [])
+            panel_titles = [p.get("title", "").lower() for p in panels]
+            
+            # Check for Golden Signals
+            has_traffic = any("traffic" in title or "request" in title or "rps" in title for title in panel_titles)
+            has_latency = any("latency" in title or "duration" in title or "p99" in title or "p95" in title for title in panel_titles)
+            has_errors = any("error" in title for title in panel_titles)
+            has_saturation = any("saturation" in title or "cpu" in title or "memory" in title for title in panel_titles)
+            
+            assert has_traffic, "Service overview should have Traffic metric panel"
+            assert has_latency, "Service overview should have Latency metric panel"
+            assert has_errors, "Service overview should have Errors metric panel"
+            assert has_saturation, "Service overview should have Saturation metric panel"
+        
+        print("✅ Service overview dashboard includes Golden Signals")
+
