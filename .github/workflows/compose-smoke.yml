@@ -26,13 +26,13 @@ jobs:
           echo "Checking service health status..."
           docker compose ps
 
-          echo -e "\nChecking Loki health..."
+          printf "\nChecking Loki health...\n"
           curl -f http://localhost:3100/ready || (echo "Loki is not ready" && docker compose logs loki --tail 50 && exit 1)
 
-          echo -e "\nChecking Prometheus health..."
+          printf "\nChecking Prometheus health...\n"
           curl -f http://localhost:9090/-/healthy || (echo "Prometheus is not healthy" && docker compose logs prometheus --tail 50 && exit 1)
 
-          echo -e "\nAll core services are healthy!"
+          printf "\nAll core services are healthy!\n"
 
       - name: Check containers are running
         run: |
