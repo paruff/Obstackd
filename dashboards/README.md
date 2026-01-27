@@ -44,9 +44,9 @@ dashboards/
 ```yaml
 grafana:
   volumes:
-    - ./dashboards/platform:/var/lib/grafana/dashboards/platform:ro
-    - ./dashboards/services:/var/lib/grafana/dashboards/services:ro
-    - ./provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+    - ./dashboards/platform:/etc/grafana/dashboards/platform:ro
+    - ./dashboards/services:/etc/grafana/dashboards/services:ro
+    - ./provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/new-dashboards.yaml:ro
 ```
 
 2. **Restart Grafana**:

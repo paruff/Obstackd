@@ -10,7 +10,7 @@ providers:
     updateIntervalSeconds: 10
     allowUiUpdates: false
     options:
-      path: /var/lib/grafana/dashboards/platform
+      path: /etc/grafana/dashboards/platform
       foldersFromFilesStructure: false
 
   # Service dashboards - for application monitoring
@@ -22,5 +22,5 @@ providers:
     updateIntervalSeconds: 10
     allowUiUpdates: false
     options:
-      path: /var/lib/grafana/dashboards/services
+      path: /etc/grafana/dashboards/services
       foldersFromFilesStructure: false
