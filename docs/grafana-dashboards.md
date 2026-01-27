@@ -4,13 +4,12 @@ This document describes the pre-built Grafana dashboards included in the Obstack
 
 ## Overview
 
-Obstackd includes 5 pre-built dashboards that provide comprehensive monitoring across the entire observability stack:
+Obstackd includes 4 pre-built dashboards that provide comprehensive monitoring across the entire observability stack:
 
 1. **Observability Stack Health** - Monitor the health of core observability components
-2. **Home Assistant Metrics** - Monitor smart home automation platform
-3. **IoT Devices & MQTT** - Monitor IoT device connectivity and MQTT broker
-4. **Application Performance** - Monitor application RED metrics and traces
-5. **Infrastructure Overview** - Monitor container and host resources
+2. **IoT Devices & MQTT** - Monitor IoT device connectivity and MQTT broker
+3. **Application Performance** - Monitor application RED metrics and traces
+4. **Infrastructure Overview** - Monitor container and host resources
 
 All dashboards are:
 - ✅ Auto-provisioned on startup
@@ -74,55 +73,7 @@ rate(loki_distributor_lines_received_total{job="loki"}[5m])
 
 ---
 
-### 2. Home Assistant Metrics
-
-**UID:** `homeassistant-metrics`  
-**Tags:** homeassistant, smart-home, monitoring
-
-**Purpose:** Monitor Home Assistant smart home platform performance and health.
-
-**Key Panels:**
-
-**Home Assistant Overview**
-- **Total Entities** - Count of all entities in Home Assistant
-- **Total Automations** - Number of automations configured
-- **Uptime** - Time since Home Assistant started
-- **Status** - Up/down status indicator
-
-**Entity Metrics**
-- **Entity Count by Domain** - Pie chart showing entities by domain (light, sensor, switch, etc.)
-- **Entity State Changes** - Rate of state changes over time
-
-**Automation Metrics**
-- **Automation Execution Rate** - How often automations are triggered
-- **Automation Execution Duration** - Duration percentiles for automation runs
-
-**API Performance**
-- **API Request Rate** - Rate of API requests to Home Assistant
-- **API Response Time** - Response time percentiles (p50, p95, p99)
-
-**Integration Status**
-- **Active Integrations** - Pie chart of loaded integrations
-- **Database Query Performance** - Database query duration percentiles
-
-**Variables:**
-- `time_range` - Select time range (15m, 1h, 6h, 24h, 7d)
-
-**Queries Used:**
-```promql
-# Entity count
-homeassistant_entity_available
-
-# Automation execution rate
-rate(homeassistant_automation_triggered_total[5m])
-
-# API response time
-histogram_quantile(0.95, rate(homeassistant_api_request_duration_seconds_bucket[5m]))
-```
-
----
-
-### 3. IoT Devices & MQTT
+### 2. IoT Devices & MQTT
 
 **UID:** `iot-devices-mqtt`  
 **Tags:** iot, mqtt, devices
@@ -172,7 +123,7 @@ histogram_quantile(0.99, rate(mqtt_publish_duration_milliseconds_bucket[5m]))
 
 ---
 
-### 4. Application Performance
+### 3. Application Performance
 
 **UID:** `application-performance`  
 **Tags:** application, performance, red-metrics, traces
@@ -228,7 +179,7 @@ histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by 
 
 ---
 
-### 5. Infrastructure Overview
+### 4. Infrastructure Overview
 
 **UID:** `infrastructure-overview`  
 **Tags:** infrastructure, containers, docker, resources
@@ -383,12 +334,12 @@ providers:
 ### Panels Show "No Data"
 
 This can happen when:
-- Metrics don't exist yet (e.g., no MQTT traffic, no Home Assistant)
+- Metrics don't exist yet (e.g., no MQTT traffic)
 - Metric names have changed
 - Service is not running or not being scraped
 
 **Solutions:**
-1. Start the missing service (e.g., Home Assistant for HA dashboard)
+1. Start the missing service
 2. Wait for at least one scrape cycle (30 seconds)
 3. Check Prometheus targets are up: http://localhost:9090/targets
 
@@ -412,9 +363,8 @@ pytest tests/integration/test_dashboards.py -v
 **Expected Output:**
 ```
 ✅ Grafana is ready after 3 attempts
-✅ All 5 dashboards are provisioned
+✅ All 4 dashboards are provisioned
 ✅ Observability Stack Health dashboard validated
-✅ Home Assistant Metrics dashboard validated
 ✅ IoT Devices & MQTT dashboard validated
 ✅ Application Performance dashboard validated
 ✅ Infrastructure Overview dashboard validated
@@ -469,5 +419,4 @@ While the dashboards are pre-built and version-controlled, you can:
 - [Prometheus Operations](prometheus-operations.md)
 - [Tempo Operations](tempo-operations.md)
 - [Loki Operations](loki-operations.md)
-- [Home Assistant Metrics](homeassistant-metrics.md)
 - [Alertmanager Operations](alertmanager-operations.md)

@@ -26,7 +26,7 @@ jobs:
 
       - name: Create data directories
         run: |
-          mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager data/homeassistant
+          mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager
           chmod -R 777 data/
 
       - name: Start observability stack

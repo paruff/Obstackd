@@ -63,32 +63,11 @@ Tests Loki log aggregation system.
 
 ### Application Integration Tests
 
-#### Home Assistant Metrics Integration (`test_homeassistant_metrics.py`)
-
-Tests the complete flow of Home Assistant metrics from source to Prometheus.
-
-**Test Scenarios:**
-
-1. **Home Assistant Prometheus Endpoint**
-   - Validates HA exposes metrics at `/api/prometheus`
-   - Verifies metrics are in valid Prometheus format
-   - Checks for key metrics (entity count, automation count)
-
-2. **Prometheus Scraping**
-   - Validates Prometheus discovers and scrapes HA target
-   - Verifies `up{job="homeassistant"}=1` metric
-   - Ensures HA metrics appear in Prometheus
-
-3. **Metric Labels and Quality**
-   - Validates required labels (job, instance)
-   - Checks metric values are reasonable
-   - Documents available metrics
-
 ## Prerequisites
 
 - Docker and Docker Compose installed
 - Python 3.8+ installed
-- Services running via `docker compose --profile core --profile apps up -d`
+- Services running via `docker compose --profile core up -d`
 
 ## Installation
 
@@ -148,9 +127,6 @@ pytest tests/integration/test_tempo_integration.py -v
 # Loki tests
 pytest tests/integration/test_loki_integration.py -v
 
-# Home Assistant tests
-pytest tests/integration/test_homeassistant_metrics.py -v
-
 # Dashboard tests
 pytest tests/integration/test_dashboards.py -v
 ```
@@ -177,12 +153,6 @@ pytest tests/integration/ -v
 pytest tests/integration/ -m "not slow"
 ```
 
-### Run Specific Test
-
-```bash
-pytest tests/integration/test_homeassistant_metrics.py::TestHomeAssistantPrometheusEndpoint::test_homeassistant_is_running
-```
-
 ## Test Markers
 
 Tests are marked with the following markers for easy filtering:
@@ -192,7 +162,6 @@ Tests are marked with the following markers for easy filtering:
 - `@pytest.mark.grafana` - Grafana tests
 - `@pytest.mark.tempo` - Tempo tests
 - `@pytest.mark.loki` - Loki tests
-- `@pytest.mark.homeassistant` - Home Assistant related tests
 - `@pytest.mark.metrics` - Metrics collection tests
 - `@pytest.mark.slow` - Tests that take >30 seconds (require scrape cycles)
 - `@pytest.mark.integration` - All integration tests
@@ -224,35 +193,9 @@ Tests can be configured with the following environment variables:
 - `LOKI_URL` - Loki base URL (default: `http://localhost:3100`)
 
 **Applications:**
-- `HOMEASSISTANT_URL` - Home Assistant base URL (default: `http://localhost:8123`)
-
 Example:
 ```bash
 GRAFANA_URL=http://grafana:3000 pytest tests/integration/test_grafana_integration.py
-```
-
-## Expected Metrics
-
-### Home Assistant Core Metrics
-
-Based on Home Assistant's Prometheus integration, the following metric categories are expected:
-
-1. **Entity Metrics**
-   - `homeassistant_entity_available` - Entity availability by domain
-   - Entity state values (depends on configuration)
-
-2. **Automation Metrics**
-   - Automation trigger counts
-   - Automation execution states
-
-3. **System Metrics**
-   - API call counts
-   - Integration health
-   - Component states
-
-For a complete list of available metrics, run:
-```bash
-pytest tests/integration/test_homeassistant_metrics.py::TestHomeAssistantMetricsDocumentation::test_document_available_metrics -v -s
 ```
 
 ## Test Coverage Summary
@@ -265,9 +208,8 @@ pytest tests/integration/test_homeassistant_metrics.py::TestHomeAssistantMetrics
 | Tempo | 15 | Health, ports, API, metrics |
 | Loki | 15 | Health, ports, API, Promtail |
 | **Core Total** | **71** | **All core functionality** |
-| Home Assistant | 9 | Metrics, Prometheus integration |
 | Dashboards | 14 | Provisioning, structure, datasources |
-| **Grand Total** | **94+** | **Complete observability stack** |
+| **Grand Total** | **85+** | **Complete observability stack** |
 
 ### Expected Test Results
 
@@ -276,49 +218,10 @@ When running with `--profile core`:
 - **0 failures**
 - **Duration**: ~20 seconds
 
-When running with `--profile core --profile apps`:
-- **All tests** pass (including Home Assistant)
+When running with `--profile core`:
 - **Duration**: ~40-60 seconds
 
 ## Troubleshooting
-
-### Home Assistant Not Ready
-
-If tests fail with "Home Assistant did not become ready in time":
-
-1. Check if Home Assistant container is running:
-   ```bash
-   docker compose ps homeassistant
-   ```
-
-2. Check Home Assistant logs:
-   ```bash
-   docker compose logs homeassistant
-   ```
-
-3. Verify configuration is valid:
-   ```bash
-   docker compose exec homeassistant hass --script check_config
-   ```
-
-### No Metrics in Prometheus
-
-If Home Assistant metrics don't appear in Prometheus:
-
-1. Check Prometheus targets:
-   ```bash
-   curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="homeassistant")'
-   ```
-
-2. Verify Prometheus is scraping:
-   ```bash
-   docker compose logs prometheus | grep homeassistant
-   ```
-
-3. Test HA metrics endpoint directly:
-   ```bash
-   curl http://localhost:8123/api/prometheus
-   ```
 
 ### Slow Tests Timing Out
 
@@ -341,9 +244,7 @@ Slow tests wait for Prometheus scrape cycles (35 seconds by default). If tests t
 
 Common fixtures are defined in `conftest.py`:
 
-- `homeassistant_base_url` - HA base URL
 - `prometheus_base_url` - Prometheus base URL
-- `wait_for_homeassistant` - Wait for HA readiness
 - `wait_for_prometheus` - Wait for Prometheus readiness
 - `wait_for_scrape_cycle` - Wait for Prometheus scrape
 - `prometheus_query` - Helper to query Prometheus
@@ -380,7 +281,6 @@ docker compose down -v
 
 ## References
 
-- [Home Assistant Prometheus Integration](https://www.home-assistant.io/integrations/prometheus/)
 - [Prometheus Query API](https://prometheus.io/docs/prometheus/latest/querying/api/)
 - [pytest Documentation](https://docs.pytest.org/)
 - [pytest-bdd Documentation](https://pytest-bdd.readthedocs.io/)

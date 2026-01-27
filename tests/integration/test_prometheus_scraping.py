@@ -230,8 +230,8 @@ class TestPrometheusAllTargets:
         
         # Core services that must be up
         core_services = ["prometheus", "otel-collector", "alertmanager"]
-        # Optional services (like homeassistant in apps profile)
-        optional_services = ["homeassistant"]
+        # Optional services that may not be scheduled
+        optional_services = []
         
         down_core_targets = []
         down_optional_targets = []
@@ -272,7 +272,7 @@ class TestPrometheusAllTargets:
         
         # Optional services that may not be running
         # otel-app-metrics only has samples when applications send OTLP telemetry
-        optional_services = ["homeassistant", "otel-app-metrics"]
+        optional_services = ["otel-app-metrics"]
         
         if len(results) > 0:
             core_zero_sample_targets = []
@@ -382,7 +382,7 @@ class TestPrometheusTargetDetails:
         assert len(targets) > 0, "Should have at least one active target"
         
         # Optional services that may not be running
-        optional_services = ["homeassistant"]
+        optional_services = []
         
         print(f"\n📊 Active Targets ({len(targets)}):")
         down_core_targets = []

@@ -22,7 +22,6 @@ DASHBOARD_DIR = os.path.join(PROJECT_ROOT, "config", "grafana", "dashboards")
 # Expected dashboard files
 DASHBOARD_FILES = [
     "observability-stack-health.json",
-    "homeassistant-metrics.json",
     "iot-devices-mqtt.json",
     "application-performance.json",
     "infrastructure-overview.json"
@@ -117,13 +116,12 @@ class TestDashboardProvisioning:
         assert data.get("database") == "ok", "Grafana database should be healthy"
     
     def test_all_dashboards_provisioned(self, wait_for_grafana, grafana_base_url: str, grafana_auth: tuple):
-        """Test that all 5 dashboards are provisioned."""
+        """Test that all 4 dashboards are provisioned."""
         dashboards = get_dashboards(grafana_base_url, grafana_auth)
         
         # Expected dashboard UIDs
         expected_uids = [
             "observability-stack-health",
-            "homeassistant-metrics",
             "iot-devices-mqtt",
             "application-performance",
             "infrastructure-overview"
@@ -159,33 +157,6 @@ class TestDashboardProvisioning:
         assert "OTel Collector Status" in panel_titles, "Should have OTel Collector status panel"
         
         print("✅ Observability Stack Health dashboard validated")
-    
-    def test_homeassistant_metrics_dashboard(self, wait_for_grafana, grafana_base_url: str, grafana_auth: tuple):
-        """Test Home Assistant Metrics dashboard structure."""
-        dashboard = get_dashboard_by_uid(grafana_base_url, grafana_auth, "homeassistant-metrics")
-        
-        assert dashboard is not None
-        assert "dashboard" in dashboard
-        
-        dash = dashboard["dashboard"]
-        assert dash["title"] == "Home Assistant Metrics"
-        assert "homeassistant" in dash["tags"]
-        
-        # Check for key panels
-        panels = dash.get("panels", [])
-        assert len(panels) > 0, "Dashboard should have panels"
-        
-        panel_titles = [p.get("title", "") for p in panels]
-        assert "Total Entities" in panel_titles, "Should have Total Entities panel"
-        assert "Entity Count by Domain" in panel_titles, "Should have Entity Count by Domain panel"
-        
-        # Check for variables
-        templating = dash.get("templating", {})
-        variables = templating.get("list", [])
-        var_names = [v.get("name", "") for v in variables]
-        assert "time_range" in var_names, "Should have time_range variable"
-        
-        print("✅ Home Assistant Metrics dashboard validated")
     
     def test_iot_devices_mqtt_dashboard(self, wait_for_grafana, grafana_base_url: str, grafana_auth: tuple):
         """Test IoT Devices & MQTT dashboard structure."""
@@ -274,7 +245,6 @@ class TestDashboardProvisioning:
         """Test that dashboards have auto-refresh configured."""
         expected_uids = [
             "observability-stack-health",
-            "homeassistant-metrics",
             "iot-devices-mqtt",
             "application-performance",
             "infrastructure-overview"
@@ -295,7 +265,6 @@ class TestDashboardProvisioning:
         """Test that dashboards have appropriate time range configured."""
         expected_uids = [
             "observability-stack-health",
-            "homeassistant-metrics",
             "iot-devices-mqtt",
             "application-performance",
             "infrastructure-overview"

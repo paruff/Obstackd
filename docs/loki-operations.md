@@ -511,20 +511,6 @@ scrape_configs:
         target_label: namespace
 ```
 
-### Home Assistant Logs
-
-```yaml
-# Add to promtail.yaml
-scrape_configs:
-  - job_name: homeassistant
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: homeassistant
-          __path__: /var/log/homeassistant/*.log
-```
-
 ## References
 
 - **Loki Documentation**: https://grafana.com/docs/loki/v2.9.x/

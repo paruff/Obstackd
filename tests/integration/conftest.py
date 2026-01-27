@@ -1,6 +1,5 @@
 """
-Pytest Configuration and Fixtures for Integration Tests
-Provides shared fixtures for Home Assistant integration testing
+Pytest configuration and shared fixtures for integration tests.
 """
 
 import os
@@ -11,15 +10,8 @@ from typing import Dict, Any
 
 
 # Configuration
-HOMEASSISTANT_URL = os.getenv("HOMEASSISTANT_URL", "http://localhost:8123")
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
 OTEL_COLLECTOR_URL = os.getenv("OTEL_COLLECTOR_URL", "http://localhost:8888")
-
-
-@pytest.fixture(scope="session")
-def homeassistant_base_url() -> str:
-    """Provide Home Assistant base URL."""
-    return HOMEASSISTANT_URL
 
 
 @pytest.fixture(scope="session")
@@ -32,31 +24,6 @@ def prometheus_base_url() -> str:
 def otel_collector_base_url() -> str:
     """Provide OpenTelemetry Collector base URL."""
     return OTEL_COLLECTOR_URL
-
-
-@pytest.fixture(scope="session")
-def wait_for_homeassistant(homeassistant_base_url: str) -> None:
-    """Wait for Home Assistant to be ready."""
-    max_retries = 30
-    retry_interval = 2
-    
-    for attempt in range(max_retries):
-        try:
-            # Check the Prometheus endpoint which doesn't require auth
-            response = requests.get(
-                f"{homeassistant_base_url}/api/prometheus",
-                timeout=5
-            )
-            # 200 is success, 401 also means it's running (just auth required for other endpoints)
-            if response.status_code in [200, 401]:
-                print(f"✅ Home Assistant is ready after {attempt + 1} attempts")
-                return
-        except requests.exceptions.RequestException:
-            pass
-        
-        time.sleep(retry_interval)
-    
-    pytest.fail("Home Assistant did not become ready in time")
 
 
 @pytest.fixture(scope="session")
