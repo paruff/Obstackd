@@ -236,7 +236,6 @@ services:
       - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - ./dashboards/platform:/etc/grafana/dashboards/platform:ro
       - ./dashboards/services:/etc/grafana/dashboards/services:ro
-      - ./provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/new-dashboards.yaml:ro
       - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
     ports:
       - "3000:3000"

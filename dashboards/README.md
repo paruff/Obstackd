@@ -30,23 +30,26 @@ dashboards/
 │   ├── service-debug.json              # Debugging tools
 │   ├── service-slo.json                # SLO tracking
 │   └── service-capacity.json           # Capacity planning
-├── provisioning/
-│   └── dashboards.yaml                 # Provisioning config
 └── README.md                           # This file
+```
+
+**Note:** The provisioning configuration is located at `config/grafana/provisioning/dashboards/new-dashboards.yaml` and is automatically included with the existing Grafana provisioning mount.
 ```
 
 ## Quick Start
 
 ### Option 1: Provision Dashboards (Recommended)
 
-1. **Update your Grafana volume mounts** in `compose.yaml`:
+The dashboards are automatically provisioned when you start Grafana. The provisioning configuration is already included in the repository at `config/grafana/provisioning/dashboards/new-dashboards.yaml`.
+
+1. **Verify your Grafana volume mounts** in `compose.yaml` include:
 
 ```yaml
 grafana:
   volumes:
+    - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
     - ./dashboards/platform:/etc/grafana/dashboards/platform:ro
     - ./dashboards/services:/etc/grafana/dashboards/services:ro
-    - ./provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/new-dashboards.yaml:ro
 ```
 
 2. **Restart Grafana**:
