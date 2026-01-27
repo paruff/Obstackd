@@ -242,7 +242,7 @@
           "color": { "mode": "thresholds" },
           "mappings": [],
           "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] },
-          "unit": "ms"
+          "unit": "s"
         }
       },
       "gridPos": { "h": 4, "w": 8, "x": 16, "y": 5 },
