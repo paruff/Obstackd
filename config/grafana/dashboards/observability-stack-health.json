@@ -109,7 +109,7 @@
           "refId": "A"
         }
       ],
-      "title": "Prometheus",
+      "title": "Prometheus Status",
       "type": "stat"
     },
     {
@@ -185,7 +185,7 @@
           "refId": "A"
         }
       ],
-      "title": "OTel Collector",
+      "title": "OTel Collector Status",
       "type": "stat"
     },
     {
@@ -714,8 +714,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Observability Stack Health - WORKING",
-  "uid": "stack-health",
+  "title": "Observability Stack Health",
+  "uid": "observability-stack-health",
   "version": 1,
   "weekStart": ""
 }
