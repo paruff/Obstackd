@@ -16,6 +16,8 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 **Primary Use Case:** Provides a production-ready observability platform that can be deployed from a single `docker compose up` command, with zero manual configuration steps required.
 
+**Multi-Stack Support:** Designed to serve as a centralized observability platform for multiple Docker Compose applications. See [Multi-Stack Integration Guide](docs/multi-stack-integration.md) for connecting other applications.
+
 ---
 
 ## Quick Start

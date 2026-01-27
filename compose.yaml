@@ -294,3 +294,5 @@ services:
 networks:
   default:
     name: observability-lab
+    driver: bridge
+    external: false
