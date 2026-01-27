@@ -29,8 +29,8 @@ initialize_test() {
 }
 
 # Test Result Tracking
-declare -A TEST_RESULTS
-declare -A TEST_DURATIONS
+TESTS_PASSED=0
+TESTS_FAILED=0
 START_TIME=$(date +%s)
 
 record_test_result() {
@@ -39,8 +39,13 @@ record_test_result() {
     local duration=$3
     local message=$4
     
-    TEST_RESULTS["${test_id}"]="${result}"
-    TEST_DURATIONS["${test_id}"]="${duration}"
+    if [ "$result" = "PASS" ]; then
+        ((TESTS_PASSED++))
+        echo -e "${GREEN}✅ PASS${NC} [${test_id}] ${message} (${duration}s)"
+    else
+        ((TESTS_FAILED++))
+        echo -e "${RED}❌ FAIL${NC} [${test_id}] ${message} (${duration}s)"
+    fi
     
     echo "TEST: ${test_id} | RESULT: ${result} | DURATION: ${duration}s | MESSAGE: ${message}" \
         >> "${REPORT_DIR}/test-results.csv"
@@ -322,15 +327,7 @@ generate_summary_report() {
     local failed=0
     local warned=0
     
-    for test_id in "${!TEST_RESULTS[@]}"; do
-        case "${TEST_RESULTS[${test_id}]}" in
-            "PASS") ((passed++)) ;;
-            "FAIL") ((failed++)) ;;
-            "WARN") ((warned++)) ;;
-        esac
-    done
-    
-    local total=$((passed + failed + warned))
+    local total=$((TESTS_PASSED + TESTS_FAILED))
     
     cat > "${REPORT_DIR}/summary.md" << EOF
 # Dashboard Validation E2E Test - Summary
@@ -342,33 +339,16 @@ generate_summary_report() {
 ## Results
 
 - **Total Tests:** ${total}
-- **Passed:** ${passed} ✓
-- **Failed:** ${failed} ✗
-- **Warnings:** ${warned} ⚠
+- **Passed:** ${TESTS_PASSED} ✓
+- **Failed:** ${TESTS_FAILED} ✗
 
 ## Test Details
 
-| Test ID | Result | Duration | Message |
-|---------|--------|----------|---------|
+See full results in: ${REPORT_DIR}/test-results.csv
+
 EOF
     
-    for test_id in "${!TEST_RESULTS[@]}"; do
-        local result="${TEST_RESULTS[${test_id}]}"
-        local duration="${TEST_DURATIONS[${test_id}]}"
-        local symbol
-        case "${result}" in
-            "PASS") symbol="✓" ;;
-            "FAIL") symbol="✗" ;;
-            "WARN") symbol="⚠" ;;
-        esac
-        
-        local message
-        message=$(grep "^TEST: ${test_id}" "${REPORT_DIR}/test-results.csv" 2>/dev/null | cut -d'|' -f4 | sed 's/^ MESSAGE: //')
-        
-        echo "| ${test_id} | ${symbol} ${result} | ${duration}s | ${message} |" >> "${REPORT_DIR}/summary.md"
-    done
-    
-    if [[ ${failed} -eq 0 ]]; then
+    if [[ ${TESTS_FAILED} -eq 0 ]]; then
         cat >> "${REPORT_DIR}/summary.md" << EOF
 
 ## Conclusion
@@ -410,17 +390,17 @@ main() {
     # Data availability checks
     check_metrics_available || true
     check_logs_available || true
-    check_traces_available || overall_result=1
+    check_traces_available || true
     
     # Dashboard validation
-    test_dashboard_metrics_rendering || overall_result=1
+    test_dashboard_metrics_rendering || true
     test_dashboard_logs_queries || true
     test_trace_correlation || true
     
     # Generate report
     echo ""
     echo "========================================"
-    generate_summary_report || overall_result=1
+    generate_summary_report || true
     echo "========================================"
     
     cat "${REPORT_DIR}/summary.md"
@@ -429,7 +409,12 @@ main() {
     echo "Report saved to: ${REPORT_DIR}/summary.md"
     echo "Full logs: ${LOG_FILE}"
     
-    exit ${overall_result}
+    # Exit with failure if any tests failed
+    if [[ ${TESTS_FAILED} -gt 0 ]]; then
+        exit 1
+    else
+        exit 0
+    fi
 }
 
 main "$@"

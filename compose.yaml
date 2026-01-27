@@ -96,12 +96,14 @@ services:
     profiles: ["core"]
 
   alloy:
-    image: grafana/alloy:1.1.0
+    image: grafana/alloy:v1.12.2
     container_name: alloy
     restart: unless-stopped
     command:
       - "run"
-      - "--config.file=/etc/alloy/config.river"
+      - "--server.http.listen-addr=0.0.0.0:12345"
+      - "--storage.path=/var/lib/alloy"
+      - "/etc/alloy/config.river"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/alloy/config.river:/etc/alloy/config.river:ro

@@ -63,9 +63,9 @@ Location: `config/loki/loki.yaml`
 - **Ingestion Rate Limit**: 10MB/s with 20MB burst
 - **Schema**: TSDB v13 (latest, optimized)
 
-### Promtail Configuration
+### Alloy Configuration
 
-Location: `config/promtail/promtail.yaml`
+Location: `config/alloy/alloy.yaml`
 
 **Key Settings:**
 - **Docker Service Discovery**: Automatically discovers running containers
@@ -204,17 +204,17 @@ curl -s http://localhost:3100/ring
 curl -s http://localhost:3100/loki/api/v1/status/buildinfo | jq '.'
 ```
 
-### Promtail Health
+### Alloy Health
 
 ```bash
 # Targets (discovered containers)
-curl -s http://localhost:9080/targets | jq '.activeTargets | length'
+curl -s http://localhost:12345/targets | jq '.activeTargets | length'
 
 # Metrics
-curl -s http://localhost:9080/metrics | grep promtail_
+curl -s http://localhost:12345/metrics | grep alloy_
 
 # Service discovery status
-curl -s http://localhost:9080/service-discovery | jq '.'
+curl -s http://localhost:12345/service-discovery | jq '.'
 ```
 
 ## Operational Tasks
@@ -249,9 +249,9 @@ curl -G -s "http://localhost:3100/loki/api/v1/query" \
 
 **No logs appearing:**
 ```bash
-# 1. Check Promtail is running and discovering containers
-docker compose logs promtail | tail -50
-curl -s http://localhost:9080/targets | jq '.activeTargets | length'
+# 1. Check Alloy is running and discovering containers
+docker compose logs alloy | tail -50
+curl -s http://localhost:12345/targets | jq '.activeTargets | length'
 
 # 2. Check Loki ingestion
 docker compose logs loki | tail -50
@@ -428,11 +428,11 @@ This setup runs without authentication for local development. For production:
 
 1. Enable `auth_enabled: true` in `loki.yaml`
 2. Configure tenants
-3. Add authentication to Promtail and OTel Collector
+3. Add authentication to Alloy and OTel Collector
 
 ### Network Security
 
-- Loki and Promtail run on the internal Docker network
+- Loki and Alloy run on the internal Docker network
 - Only essential ports are exposed to localhost
 - No external access by default
 
@@ -446,7 +446,7 @@ This setup runs without authentication for local development. For production:
 
 **Use log scrubbing:**
 ```yaml
-# In promtail.yaml pipeline_stages:
+# In alloy.yaml pipeline_stages:
 - replace:
     expression: 'password=\S+'
     replace: 'password=***'
@@ -458,7 +458,7 @@ This setup runs without authentication for local development. For production:
 
 **Daily:**
 - Monitor ingestion rate and storage growth
-- Check for error logs in Loki and Promtail
+- Check for error logs in Loki and Alloy
 
 **Weekly:**
 - Review retention and compaction metrics
@@ -466,7 +466,7 @@ This setup runs without authentication for local development. For production:
 
 **Monthly:**
 - Review and optimize query patterns
-- Check for Loki/Promtail updates
+- Check for Loki/Alloy updates
 
 ### Compaction
 
@@ -499,7 +499,7 @@ curl -s http://localhost:3100/metrics | grep loki_compactor_deleted_
 ### Kubernetes Logs (if deployed to K8s)
 
 ```yaml
-# Add to promtail.yaml
+# Add to alloy.yaml
 scrape_configs:
   - job_name: kubernetes-pods
     kubernetes_sd_configs:
@@ -515,13 +515,13 @@ scrape_configs:
 
 - **Loki Documentation**: https://grafana.com/docs/loki/v2.9.x/
 - **LogQL Guide**: https://grafana.com/docs/loki/v2.9.x/query/
-- **Promtail Configuration**: https://grafana.com/docs/loki/v2.9.x/send-data/promtail/configuration/
+- **Alloy Configuration**: https://grafana.com/docs/loki/v2.9.x/send-data/alloy/configuration/
 - **Best Practices**: https://grafana.com/docs/loki/v2.9.x/operations/best-practices/
 
 ## Support
 
 For issues:
-1. Check Docker logs: `docker compose logs loki promtail`
+1. Check Docker logs: `docker compose logs loki alloy`
 2. Verify configuration syntax: `docker compose config`
 3. Review this guide's troubleshooting section
 4. Check Grafana Loki GitHub issues

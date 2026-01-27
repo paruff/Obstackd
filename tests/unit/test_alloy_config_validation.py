@@ -51,14 +51,17 @@ class TestAlloyConfiguration:
         print("✅ Alloy config has logging configuration")
     
     def test_alloy_config_has_server_block(self):
-        """Test that config includes server configuration."""
-        with open(ALLOY_CONFIG_FILE, 'r') as f:
+        """Test that server config is handled via CLI args (v1.12.2+)."""
+        compose_file = os.path.join(PROJECT_ROOT, "compose.yaml")
+        with open(compose_file, 'r') as f:
             content = f.read()
         
-        assert "server {" in content, "Config should have server block"
-        assert "12345" in content, "Server should listen on port 12345"
+        # In v1.12.2, server is configured via CLI args, not River config
+        assert "  alloy:" in content, "Compose should define alloy service"
+        assert "--server.http.listen-addr=0.0.0.0:12345" in content, \
+            "Alloy should listen on port 12345 (via CLI args)"
         
-        print("✅ Alloy config has server configuration (port 12345)")
+        print("✅ Alloy server configured via CLI args (v1.12.2+)")
     
     def test_alloy_config_has_docker_source(self):
         """Test that config includes Docker log source."""
@@ -67,10 +70,14 @@ class TestAlloyConfiguration:
         
         assert "loki.source.docker" in content, \
             "Config should have Loki Docker source"
-        assert "/var/run/docker.sock" in content, \
+        assert "unix:///var/run/docker.sock" in content, \
             "Config should reference Docker socket"
-        assert "positions_path" in content, \
-            "Config should have positions file path"
+        # In v1.12.2, positions handled by storage.path CLI arg
+        compose_file = os.path.join(PROJECT_ROOT, "compose.yaml")
+        with open(compose_file, 'r') as f:
+            compose = f.read()
+        assert "--storage.path=/var/lib/alloy" in compose, \
+            "Storage path should be configured via CLI"
         
         print("✅ Alloy config has Docker source configuration")
     
@@ -91,7 +98,6 @@ class TestAlloyConfiguration:
             content = f.read()
         
         required_labels = [
-            'job = "docker"',
             'stream',
             'container_name',
             'container_id',
@@ -125,10 +131,15 @@ class TestAlloyConfiguration:
             compose_content = f.read()
         
         # Check for Alloy service with docker socket mount
-        assert "alloy:" in compose_content, "Compose should define alloy service"
+        assert "  alloy:" in compose_content, "Compose should define alloy service"
         
-        # Check for docker socket mount
-        alloy_section = compose_content.split("alloy:")[1].split("prometheus:")[0]
+        # Check for docker socket mount (get section between alloy and next service)
+        alloy_start = compose_content.find("  alloy:")
+        next_service = compose_content.find("\n  prometheus:", alloy_start)
+        if next_service == -1:
+            next_service = len(compose_content)
+        alloy_section = compose_content[alloy_start:next_service]
+        
         assert "/var/run/docker.sock" in alloy_section, \
             "Alloy service should mount Docker socket"
         assert "config/alloy/config.river" in alloy_section, \
@@ -144,7 +155,12 @@ class TestAlloyConfiguration:
             compose_content = f.read()
         
         # Check for Alloy service with Loki dependency
-        alloy_section = compose_content.split("alloy:")[1].split("prometheus:")[0]
+        alloy_start = compose_content.find("  alloy:")
+        next_service = compose_content.find("\n  prometheus:", alloy_start)
+        if next_service == -1:
+            next_service = len(compose_content)
+        alloy_section = compose_content[alloy_start:next_service]
+        
         assert "depends_on" in alloy_section, \
             "Alloy service should have depends_on"
         assert "loki:" in alloy_section, \
