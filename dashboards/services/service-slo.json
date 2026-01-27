@@ -558,7 +558,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "((0.001 * sum(increase(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"}[30d]))) - sum(increase(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\",status=~\"5..\"}[30d]))) / (sum(rate(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\",status=~\"5..\"}[1h])))",
+          "expr": "((0.001 * sum(increase(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"}[30d])) - sum(increase(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\",status=~\"5..\"}[30d]))) / sum(rate(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\",status=~\"5..\"}[1h])))",
           "refId": "A"
         }
       ],

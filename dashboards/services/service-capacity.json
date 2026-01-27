@@ -899,7 +899,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(0.9 - sum(rate(process_cpu_seconds_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"}[5m]))) / deriv(sum(rate(process_cpu_seconds_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"}[5m]))[7d:5m]) / 86400",
+          "expr": "(0.9 - sum(rate(process_cpu_seconds_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"}[5m]))) / (deriv(sum(rate(process_cpu_seconds_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"}[5m]))[7d:5m]) + 0.000001) / 86400",
           "refId": "A"
         }
       ],
@@ -978,7 +978,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(4 * 1024 * 1024 * 1024 - sum(process_resident_memory_bytes{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"})) / deriv(sum(process_resident_memory_bytes{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"})[7d:5m]) / 86400",
+          "expr": "(4 * 1024 * 1024 * 1024 - sum(process_resident_memory_bytes{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"})) / (deriv(sum(process_resident_memory_bytes{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\",instance=~\"$instance\"})[7d:5m]) + 0.000001) / 86400",
           "refId": "A"
         }
       ],

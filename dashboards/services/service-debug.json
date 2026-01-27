@@ -523,7 +523,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (span_kind) (rate(traces_spanmetrics_calls_total{cluster=~\"$cluster\",namespace=~\"$namespace\",service=~\"$service\"}[5m]))",
+          "expr": "sum by (span_kind) (rate(traces_spanmetrics_calls_total{cluster=~\"$cluster\",namespace=~\"$namespace\",service_name=~\"$service\"}[5m]))",
           "legendFormat": "{{span_kind}}",
           "refId": "A"
         }
@@ -590,7 +590,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(traces_spanmetrics_calls_total{cluster=~\"$cluster\",namespace=~\"$namespace\",service=~\"$service\"}[5m]))",
+          "expr": "sum(rate(traces_spanmetrics_calls_total{cluster=~\"$cluster\",namespace=~\"$namespace\",service_name=~\"$service\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -656,7 +656,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(traces_spanmetrics_calls_total{cluster=~\"$cluster\",namespace=~\"$namespace\",service=~\"$service\"}[5m])) / sum(rate(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\"}[5m]))",
+          "expr": "sum(rate(traces_spanmetrics_calls_total{cluster=~\"$cluster\",namespace=~\"$namespace\",service_name=~\"$service\"}[5m])) / sum(rate(http_requests_total{cluster=~\"$cluster\",namespace=~\"$namespace\",job=~\"$service\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -744,7 +744,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (le) (rate(traces_spanmetrics_latency_bucket{cluster=~\"$cluster\",namespace=~\"$namespace\",service=~\"$service\"}[5m]))",
+          "expr": "sum by (le) (rate(traces_spanmetrics_latency_bucket{cluster=~\"$cluster\",namespace=~\"$namespace\",service_name=~\"$service\"}[5m]))",
           "legendFormat": "le {{le}}",
           "refId": "A"
         }
