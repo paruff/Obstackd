@@ -16,9 +16,23 @@ jobs:
           chmod -R 777 data/
           docker compose --profile core up -d --build
 
-      - name: Wait for services
+      - name: Wait for services to start
         run: |
-          sleep 30
+          echo "Waiting 90 seconds for all services to become healthy..."
+          sleep 90
+
+      - name: Verify service health
+        run: |
+          echo "Checking service health status..."
+          docker compose ps
+
+          echo -e "\nChecking Loki health..."
+          curl -f http://localhost:3100/ready || (echo "Loki is not ready" && docker compose logs loki --tail 50 && exit 1)
+
+          echo -e "\nChecking Prometheus health..."
+          curl -f http://localhost:9090/-/healthy || (echo "Prometheus is not healthy" && docker compose logs prometheus --tail 50 && exit 1)
+
+          echo -e "\nAll core services are healthy!"
 
       - name: Check containers are running
         run: |
