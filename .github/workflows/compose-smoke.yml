@@ -12,7 +12,7 @@ jobs:
 
       - name: Build and start core
         run: |
-          mkdir -p data/prometheus data/grafana
+          mkdir -p data/{tempo,loki,alloy,prometheus,alertmanager,grafana}
           chmod -R 777 data/
           docker compose --profile core up -d --build
 
