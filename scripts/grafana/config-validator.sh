@@ -2,9 +2,7 @@
 # Grafana Configuration Validator
 # Validates Grafana provisioning configuration and directory structure
 
-set -e
-
-GRAFANA_VERSION="10.4.2"
+set -euo pipefail
 
 echo "🔍 Validating Grafana Provisioning Configuration..."
 echo ""
@@ -85,13 +83,13 @@ DASHBOARD_COUNT=0
 for dashboard in ./config/grafana/dashboards/*.json; do
     if [ -f "$dashboard" ]; then
         if command -v jq &> /dev/null; then
-            jq empty "$dashboard" 2>/dev/null && {
+            if jq empty "$dashboard" 2>/dev/null; then
                 echo "✅ $(basename "$dashboard") valid"
                 DASHBOARD_COUNT=$((DASHBOARD_COUNT + 1))
-            } || {
+            else
                 echo "❌ $(basename "$dashboard") invalid JSON"
                 exit 1
-            }
+            fi
         else
             echo "⚠️  jq not found, skipping JSON validation for $(basename "$dashboard")"
             DASHBOARD_COUNT=$((DASHBOARD_COUNT + 1))

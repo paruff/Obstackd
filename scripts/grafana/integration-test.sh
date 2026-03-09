@@ -2,7 +2,7 @@
 # Grafana Integration Test
 # Tests Grafana provisioning, datasources, and dashboards
 
-set -e
+set -euo pipefail
 
 TIMEOUT=120
 INTERVAL=5
