@@ -1,190 +1,49 @@
-# Copilot Instructions — Observability Lab
+# Copilot Instructions — Obstackd (Observability Plane)
 
-## 0. Mission
+> Loaded automatically every Copilot session.
+> Full rules in `AGENTS.md` — read it for any non-trivial task.
 
-This repository defines a **long-lived, self-hosted, GitOps-first observability platform** based on:
+## Stack at a Glance
 
-- Docker Compose
-- OpenTelemetry
-- Prometheus, Tempo, Loki, Grafana
+OpenTelemetry Collector · Prometheus · Tempo · Grafana — all via Docker Compose.
 
-The system must be:
+## Context Files — Read These First
 
-- Rebuildable from zero
-- Fully declarative
-- Fully defined by files in this repo
-- Started only via: `docker compose up`
-- With **zero manual UI or CLI setup steps**
+1. `AGENTS.md` — stack map, boundaries, PM contract
+2. `compose.yaml` — current service versions and ports
+3. `docs/ARCHITECTURE.md` — how services connect
+4. `docs/KNOWN_LIMITATIONS.md` — do not make these worse
+5. `docs/CHANGE_IMPACT_MAP.md` — what breaks when configs change
 
-Copilot must optimize for:
+## Hard Rules
 
-- Boring, reliable, explicit solutions
-- Long-term operability
-- Debuggability at 3am
-- Reproducibility
-- Minimal cleverness
+- **No `latest` image tags** — always pinned versions
+- **No secrets in any committed file** — `.env` only (gitignored)
+- **Every service needs `healthcheck:`** — never remove one
+- **`yamllint` must pass** — config in `.yamllint.yml`
+- **`shellcheck` must pass** — on all `scripts/*.sh`
+- **`set -euo pipefail`** — top of every bash script
+- Grafana datasources reference services by Compose service name, not `localhost`
 
----
+## What Requires Human Approval
 
-## 1. Absolute Rules (Never Break These)
+- Image version changes in `compose.yaml`
+- Adding or removing services
+- Port number changes
+- Volume mount path changes
 
-- ❌ Do NOT introduce manual setup steps
-- ❌ Do NOT require clicking in UIs to finish configuration
-- ❌ Do NOT store state inside containers
-- ❌ Do NOT assume Kubernetes
-- ❌ Do NOT use ad-hoc scripts if config files can do the job
-- ❌ Do NOT change running containers via exec as part of the design
+## PR Requirement
 
-- ✅ Everything must be configured via files in this repo
-- ✅ All configuration must be mounted read-only into containers
-- ✅ All state must live in `./data/*`
-- ✅ All services must be defined in `compose.yaml`
-- ✅ All behavior must be reproducible from `git clone` + `docker compose up`
+Every PR needs the AI-Assisted Review Block: services affected, how tested, port/volume changes flagged, secrets check passed.
 
----
+## PR Size
 
-## 2. Architectural Invariants
+400 lines → CI blocks. `large-pr-approved` label to override (humans only).
 
-- OpenTelemetry Collector is the **only ingestion point**
-- All apps send OTLP to the collector
-- The collector routes to:
-  - Prometheus (metrics)
-  - Tempo (traces)
-  - Loki (logs)
-- Grafana is **read-only UI**, fully provisioned via config files
-- Docker Compose service names are the only service discovery mechanism
+## Commits
 
----
+`feat(compose):`, `fix(config):`, `test(acceptance):`, `docs:`, `chore:`
 
-## 3. Repository Structure (Must Be Preserved)
-.
-├── compose.yaml
-├── config/
-│   ├── otel/
-│   ├── prometheus/
-│   ├── tempo/
-│   ├── loki/
-│   └── grafana/
-│       ├── provisioning/
-│       └── dashboards/
-├── data/          # runtime state (gitignored)
-├── apps/
-└── docs/
+## Prompts
 
-Copilot must:
-
-- Put configs in the correct subfolder
-- Never inline large configs into compose.yaml
-- Never move state into config folders
-- Never mix concerns
-
----
-
-## 4. How to Modify the System
-
-When adding a new component:
-
-1. Add its config under `config/<component>/`
-2. Add its data directory under `data/<component>/`
-3. Mount both in `compose.yaml`
-4. Add Grafana provisioning if it affects visualization
-5. Ensure `docker compose up` works from a clean repo
-
----
-
-## 5. Compose File Rules
-
-- Use explicit image tags (no `latest`)
-- Use named or bind-mounted volumes under `./data`
-- Mount configs read-only
-- Use profiles (`core`, `apps`, `debug`)
-- Set container names explicitly
-- Prefer clarity over brevity
-
----
-
-## 6. OpenTelemetry Rules
-
-- OTel Collector config lives in: `config/otel/collector.yaml`
-- Pipelines must be explicit:
-  - metrics
-  - traces
-  - logs
-- Always include:
-  - batch processor
-  - memory_limiter
-- Prefer simple, readable pipelines over clever ones
-
----
-
-## 7. Grafana Rules
-
-- All datasources must be provisioned
-- All dashboards must be file-based
-- No manual dashboards
-- No manual datasources
-- No manual settings
-
-Everything must survive deleting `./data/grafana` and restarting.
-
----
-
-## 8. Demo / Golden Path Services
-
-- Must live under: `apps/`
-- Must be:
-  - Self-contained
-  - Buildable by compose
-  - Instrumented with OpenTelemetry SDK
-- Must send telemetry to: `otel-collector`
-
----
-
-## 9. How to Structure Changes (Critical)
-
-Copilot must:
-
-- Keep changes **small and reviewable**
-- Prefer adding new files over rewriting existing ones
-- Avoid refactors unless explicitly asked
-- Not mix unrelated concerns in one change
-- Follow the current phase plan (Phase 0, 1, 2, 3, ...)
-
----
-
-## 10. Validation Mindset
-
-Every change must answer:
-
-- How do we know this works?
-- What UI / query / endpoint proves it?
-- What breaks if this component is down?
-- Can the whole system be deleted and rebuilt?
-
----
-
-## 11. Tone and Style
-
-- Prefer explicit over abstract
-- Prefer boring over clever
-- Prefer readable over compact
-- Prefer configuration over code
-- Prefer determinism over flexibility
-
----
-
-## 12. If Anything Is Ambiguous
-
-Copilot should:
-
-- Ask for clarification
-- Or follow the **most conservative, boring, explicit interpretation**
-
-Never assume.
-
----
-
-## 13. Prime Directive
-
-> This repository is a **machine that turns Git into a running observability system**.  
-> Anything that weakens reproducibility, debuggability, or clarity is a regression.
+Use `docs/PROMPT_LIBRARY.md` for: Docker Compose changes, OTEL config, Prometheus rules, Grafana dashboards, acceptance tests.
