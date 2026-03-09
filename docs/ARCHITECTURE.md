@@ -19,6 +19,7 @@ All services run in the `observability-lab` Docker Compose project on the `obser
 | `loki` | `grafana/loki` | 2.9.10 | 3100 (HTTP), 9096 (gRPC) | Stores and queries logs |
 | `alloy` | `grafana/alloy` | v1.12.2 | 12345 (HTTP/metrics) | Scrapes Docker container logs, forwards to Loki |
 | `grafana` | `grafana/grafana` | 10.4.5 | 3000 | Visualization UI; datasources: Prometheus, Tempo, Loki, Alertmanager |
+| `node-exporter` | `prom/node-exporter` | v1.8.1 | 9100 | Exposes host-level hardware and OS metrics for Prometheus |
 | `telemetry-generator` | custom build (`apps/telemetry-generator`) | — | 5001 (external) / 5000 (internal) | Demo app that emits OTLP telemetry (profile: `apps`) |
 
 ---
@@ -74,7 +75,7 @@ All services run in the `observability-lab` Docker Compose project on the `obser
 ```
 grafana       → depends_on: prometheus (healthy)
 prometheus    → depends_on: alertmanager
-otel-collector→ depends_on: prometheus, tempo, loki
+otel-collector→ depends_on: prometheus (healthy), tempo (healthy), loki (healthy)
 alloy         → depends_on: loki (healthy)
 ```
 
@@ -119,7 +120,7 @@ alloy         → depends_on: loki (healthy)
 
 | Profile | Services included |
 |---|---|
-| `core` | otel-collector, tempo, loki, alloy, prometheus, alertmanager, grafana |
+| `core` | otel-collector, tempo, loki, alloy, prometheus, alertmanager, grafana, node-exporter |
 | `apps` | telemetry-generator |
 
 Start the full stack:

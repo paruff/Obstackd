@@ -29,18 +29,6 @@ groups:
           description: "The OpenTelemetry Collector has been down for more than 1 minute. This affects all telemetry data collection."
           runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#otelcollectordown"
 
-      # Alert when Prometheus is having issues scraping targets
-      - alert: PrometheusScrapeFailure
-        expr: up == 0
-        for: 5m
-        labels:
-          severity: warning
-          category: monitoring
-        annotations:
-          summary: "Prometheus scrape failure for {{ $labels.job }}"
-          description: "Prometheus has failed to scrape {{ $labels.job }} on {{ $labels.instance }} for more than 5 minutes."
-          runbook_url: "https://github.com/paruff/Obstackd/blob/main/docs/alertmanager-operations.md#prometheusscrapefailure"
-
   # Resource utilization alerts
   - name: resource_utilization
     interval: 1m

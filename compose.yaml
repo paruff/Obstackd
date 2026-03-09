@@ -15,9 +15,12 @@ services:
       - "8888:8888"   # Collector's own telemetry metrics
       - "8889:8889"   # Prometheus exporter for app metrics
     depends_on:
-      - prometheus
-      - tempo
-      - loki
+      prometheus:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/metrics"]
       interval: 30s
@@ -279,6 +282,7 @@ services:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - GF_LOG_MODE=console
       - GF_LOG_FORMAT=json
+      - GF_METRICS_ENABLED=true
     volumes:
       - ./data/grafana:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -358,6 +362,50 @@ services:
     networks:
       - observability
     profiles: ["apps"]
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: node-exporter
+    restart: unless-stopped
+    pid: "host"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    ports:
+      - "9100:9100"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "node-exporter"
+    labels:
+      - "plane=obstackd"
+      - "component=node-exporter"
+      - "managed-by=fawkes"
+    networks:
+      - observability
+    profiles: ["core"]
 
 networks:
   observability:
