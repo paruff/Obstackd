@@ -67,4 +67,8 @@ metrics_generator:
       max_items: 10000
     span_metrics:
       dimensions: []
-  processors: [service-graphs, span-metrics]
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
