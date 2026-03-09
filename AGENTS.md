@@ -16,10 +16,13 @@ standalone or integrated with `deliveryd` (CI/CD plane) and `developerd` (develo
 **Stack:**
 | Service | Version | Role |
 |---|---|---|
-| OpenTelemetry Collector | v0.99.0 | Telemetry ingestion and routing |
-| Prometheus | v2.50.1 | Metrics storage and querying |
-| Tempo | v2.3.1 | Distributed tracing backend |
-| Grafana | v10.4.2 | Visualisation and dashboards |
+| OpenTelemetry Collector | v0.103.1 | Telemetry ingestion and routing |
+| Prometheus | v2.52.0 | Metrics storage and querying |
+| Alertmanager | v0.27.0 | Alert routing and deduplication |
+| Tempo | v2.5.0 | Distributed tracing backend |
+| Loki | v2.9.10 | Log aggregation and storage |
+| Alloy | v1.12.2 | Log collection (replaced Promtail) |
+| Grafana | v10.4.5 | Visualisation and dashboards |
 | Docker Compose | latest stable | Service orchestration |
 
 **Repository:** github.com/paruff/Obstackd
