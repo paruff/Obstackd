@@ -4,7 +4,7 @@
 
 Grafana Alloy is the successor to Promtail for collecting container logs and forwarding them to Loki. It uses the River configuration language and provides a unified approach to log collection with metrics and trace support.
 
-**Current Version:** 1.1.0
+**Current Version:** v1.12.2
 
 ## Architecture
 

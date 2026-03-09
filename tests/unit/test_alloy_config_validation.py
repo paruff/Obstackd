@@ -187,7 +187,7 @@ class TestAlloyConfigDocumentation:
         
         assert "## Overview" in content, "Doc should have Overview section"
         assert "Grafana Alloy" in content, "Doc should mention Grafana Alloy"
-        assert "1.1.0" in content, "Doc should mention version"
+        assert "1.12.2" in content, "Doc should mention version"
         
         print("✅ Alloy documentation has overview section")
     

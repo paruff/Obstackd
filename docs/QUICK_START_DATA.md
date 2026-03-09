@@ -8,8 +8,8 @@
 - **View:** http://localhost:3000 → Dashboards → "Observability Stack Health"
 
 ### Logs (Loki)
-- **Status:** ✅ JUST FIXED (Promtail v3.0.0)
-- **Data:** All container logs from 13 containers
+- **Status:** ✅ ACTIVE (via Grafana Alloy v1.12.2)
+- **Data:** All container logs from Obstackd core stack
 - **View:** http://localhost:3000 → Explore → Loki
 
 ### Traces (Tempo)
@@ -63,8 +63,7 @@ Grafana → Alerting → Alert rules
 - `alertmanager` (alert metrics)
 
 ### Loki Labels (All containers logged)
-- Obstackd: prometheus, loki, tempo, grafana, otel-collector, alertmanager, promtail
-- Media-Refinery: media-refinery, beets, tdarr, radarr, sonarr, plex
+- Obstackd: prometheus, loki, tempo, grafana, otel-collector, alertmanager, alloy
 
 Available filters:
 - `compose_service` - Service name
@@ -74,14 +73,14 @@ Available filters:
 
 ---
 
-## What Was Fixed
+## Log Collection via Alloy
 
-**Problem:** Promtail couldn't connect to Docker daemon
-- Error: "client version 1.42 is too old. Minimum supported API version is 1.44"
+**Log shipper:** Grafana Alloy (v1.12.2) replaced Promtail as the container log collector.
+Alloy uses the River configuration language and natively discovers Docker containers.
 
-**Solution:** Upgraded Promtail from v2.9.4 → v3.0.0
+**Config:** `config/alloy/config.river`
 
-**Result:** Docker logs now flow to Loki ✅
+**Result:** Docker container logs flow automatically to Loki ✅
 
 ---
 

@@ -11,16 +11,15 @@
 
 ---
 
-## What's Running (All 8 Services UP)
+## What's Running (All 7 Core Services)
 
-✅ **Prometheus** (v2.50.1) - Metrics database - 22 hours uptime
-✅ **Loki** (v2.9.4) - Log storage - 22 hours uptime
-✅ **Tempo** (v2.3.1) - Trace storage - 22 hours uptime
-✅ **Grafana** (v10.4.2) - Visualization - 22 hours uptime
-✅ **OTel Collector** (v0.99.0) - Telemetry ingestion - 22 hours uptime
-✅ **Alertmanager** (v0.27.0) - Alert routing - 22 hours uptime
-✅ **Promtail** (v3.0.0) - Log shipper - 2 minutes (JUST RESTARTED & FIXED)
-✅ **Media-Refinery** - Application under observation - 9 minutes
+✅ **Prometheus** (v2.52.0) - Metrics database
+✅ **Loki** (v2.9.10) - Log storage
+✅ **Tempo** (v2.5.0) - Trace storage
+✅ **Grafana** (v10.4.5) - Visualization
+✅ **OTel Collector** (v0.103.1) - Telemetry ingestion
+✅ **Alertmanager** (v0.27.0) - Alert routing
+✅ **Alloy** (v1.12.2) - Log shipper (Docker container logs → Loki)
 
 ---
 
@@ -46,9 +45,9 @@ Method 2: Query Directly
   Try: up, otelcol_exporter_queue_size, otelcol_http_server_duration_count
 ```
 
-### 2. LOGS ✅ (NEWLY FIXED)
-**Source:** Docker containers via Promtail v3.0.0
-**What:** Stdout/stderr from all 13 running containers
+### 2. LOGS ✅
+**Source:** Docker containers via Grafana Alloy (v1.12.2)
+**What:** Stdout/stderr from all running containers
 
 **Containers Being Logged:**
 ```
@@ -59,15 +58,7 @@ Obstackd Stack:
   - grafana
   - otel-collector
   - alertmanager
-  - promtail
-
-Media-Refinery Stack:
-  - media-refinery (your app)
-  - beets
-  - tdarr
-  - radarr
-  - sonarr
-  - plex
+  - alloy
 ```
 
 **How to View:**
@@ -110,20 +101,13 @@ Alertmanager Web UI → http://localhost:9093
 
 ## Fix Applied Today
 
-### Problem
-Promtail couldn't read Docker logs:
-```
-Error: client version 1.42 is too old. 
-Minimum supported API version is 1.44
-```
+### Promtail → Alloy Migration
 
-### Solution
-Upgraded Promtail: v2.9.4 → v3.0.0
+Promtail has been replaced by Grafana Alloy as the log collection agent. Alloy uses the
+River configuration language and provides native Docker container log discovery.
 
-### Result
-✅ All 13 containers now being logged
-✅ Logs flowing to Loki
-✅ Queryable in Grafana
+**Key change:** Log collection now runs on port 12345 (Alloy) instead of 9080 (Promtail).
+Config is at `config/alloy/config.river` instead of `config/promtail/promtail.yaml`.
 
 ---
 
@@ -141,10 +125,7 @@ Upgraded Promtail: v2.9.4 → v3.0.0
 │  ├─ Grafana (UI)                            │
 │  ├─ OTel Collector (ingestion)              │
 │  ├─ Alertmanager                            │
-│  └─ Promtail (log shipper)                  │
-│                                             │
-│  Media-Refinery Stack:                      │
-│  └─ media-refinery + integrations           │
+│  └─ Alloy (log shipper)                      │
 │                                             │
 └─────────────────────────────────────────────┘
 ```
@@ -161,7 +142,7 @@ Upgraded Promtail: v2.9.4 → v3.0.0
 | Tempo | 3200 | Trace API |
 | Alertmanager | 9093 | Alert UI |
 | OTel Collector | 4317/4318 | OTLP gRPC/HTTP |
-| Promtail | 9080 | Health check |
+| Alloy | 12345 | Metrics/health check |
 
 ---
 

@@ -117,7 +117,9 @@ import (
 
 ### For Applications WITHOUT OpenTelemetry SDK
 
-Use **log shipping** with Promtail or Docker logging drivers:
+Use **Docker log shipping via Alloy** or Docker logging drivers. Alloy automatically
+discovers and ships Docker container logs to Loki — no additional configuration needed
+for containers on the `observability-lab` network:
 
 ```yaml
 services:
@@ -127,11 +129,13 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-        labels: "app.name,app.environment"
         tag: "{{.Name}}"
+    networks:
+      - observability-lab  # Join the Obstackd network for log collection
 ```
 
-Then configure Promtail to scrape Docker logs and send to Loki.
+Once joined to the `observability-lab` network, Alloy will automatically discover and
+collect logs from your container.
 
 ## Example: Media-Refinery Integration
 
@@ -215,9 +219,9 @@ docker exec your-app-container curl http://prometheus:9090/-/healthy
 **Problem:** Logs aren't showing in Grafana
 
 **Solutions:**
-- Use Promtail to ship logs from your app
-- Or configure your app to push logs directly to `loki:3100/loki/api/v1/push`
-- Or use Docker logging driver with Promtail scraping
+- Ensure your container is on the `observability-lab` network (Alloy auto-discovers it)
+- Or configure your app to push logs directly via OTLP to `otel-collector:4317`
+- Or push logs directly to `loki:3100/loki/api/v1/push`
 
 ## Best Practices
 
