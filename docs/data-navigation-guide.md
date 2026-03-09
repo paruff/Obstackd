@@ -82,58 +82,12 @@ prometheus_sd_discovered_targets              # Service discovery targets
 
 ---
 
-## 2. LOGS (Loki) ⚠️ Limited
+## 2. LOGS (Loki) ✅ Active
 
-### Current Status: Empty
+### Current Status: Running
 
-Loki exists but has **no log data yet** because:
-
-- **Obstackd containers** don't send structured logs to Loki (they log to stdout/stderr)
-- **Media-Refinery** logs to stdout via Docker, not to Loki
-- **Promtail** (log collector) is running but not configured to ship container logs
-
-### How to Enable Log Collection
-
-**Option A: Quick Fix - Ship Docker Logs (Recommended)**
-
-Edit `config/promtail/promtail.yaml` to scrape Docker logs:
-
-```yaml
-scrape_configs:
-  - job_name: docker-logs
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-    relabel_configs:
-      - source_labels: ['__meta_docker_container_name']
-        target_label: 'container_name'
-      - source_labels: ['__meta_docker_container_labels_com_docker_compose_service']
-        target_label: 'service'
-```
-
-Then:
-```bash
-docker compose restart promtail
-```
-
-**Option B: Recommended - Configure OTel to Send Logs**
-
-Update `config/otel/collector.yaml` to enable log reception:
-
-```yaml
-receivers:
-  otlp:
-    protocols:
-      grpc:
-        endpoint: 0.0.0.0:4317
-      http:
-        endpoint: 0.0.0.0:4318
-
-pipelines:
-  logs:
-    receivers: [otlp]
-    processors: [memory_limiter, batch]
-    exporters: [loki, debug]
-```
+Loki receives container logs from **Grafana Alloy**, which automatically discovers and
+scrapes all Docker container stdout/stderr logs via the Docker socket.
 
 ### Viewing Logs in Grafana
 
@@ -142,9 +96,9 @@ pipelines:
 3. Top left dropdown → **"Loki"**
 4. Try queries like:
    ```
-   {job="promtail"}                    # All promtail logs
-   {container_name="media-refinery"}   # Specific container
-   {service="media-processing"}        # By service label
+   {job="docker"}                      # All container logs
+   {compose_service="grafana"}         # Specific service
+   {compose_project="observability-lab"} # All Obstackd containers
    ```
 
 ---
@@ -308,12 +262,12 @@ count(up) by (job)
 ## Troubleshooting: "Why don't I see X?"
 
 ### "No Logs in Loki"
-- **Root cause**: Promtail not configured to scrape Docker logs
-- **Fix**: See "Option A" under LOGS section above
+- **Root cause**: Alloy not running or not connected to Docker socket
+- **Fix**: Check `docker compose logs alloy` and `curl http://localhost:12345/metrics`
 - **Verification**: 
   ```bash
   curl http://localhost:3100/loki/api/v1/label/job/values
-  # Should return something other than empty
+  # Should return ["docker"]
   ```
 
 ### "No Traces in Tempo"
@@ -351,8 +305,8 @@ count(up) by (job)
 
 ### Phase 1: Enable Full Data Collection (This Week)
 
-- [ ] Configure Promtail to collect Docker logs
-- [ ] Verify logs appear in Loki
+- [ ] Verify logs appear in Loki (check `curl http://localhost:3100/loki/api/v1/label/job/values`)
+- [ ] Verify Alloy is collecting Docker logs (`curl http://localhost:12345/metrics | grep loki_source_docker`)
 - [ ] Create dashboard for Media-Refinery logs
 
 ### Phase 2: Add Instrumentation (Next Week)
@@ -404,7 +358,7 @@ curl 'http://localhost:8889/metrics' | head -20
 |-----------|-----|------|--------|
 | Prometheus | `http://localhost:9090` | Infrastructure metrics | ✅ Viewing now |
 | Grafana | `http://localhost:3000` | Dashboards | ✅ Use this |
-| Loki | `http://localhost:3100` | Logs | ⚠️ Configure Promtail |
+| Loki | `http://localhost:3100` | Logs | ✅ Alloy collecting Docker logs |
 | Tempo | `http://localhost:3200` | Traces | ⚠️ Instrument code |
 | OTel Collector | `http://localhost:4317/4318` | OTLP receiver | ✅ Ready for data |
 | Alertmanager | `http://localhost:9093` | Alerts | ✅ Configured |

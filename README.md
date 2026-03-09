@@ -5,13 +5,13 @@
 A **Docker Compose-based observability platform** that provides a complete monitoring stack with OpenTelemetry, Prometheus, and Grafana. This is a self-hosted, GitOps-first solution designed for long-term operability and reproducibility.
 
 **Tech Stack:**
-- **OpenTelemetry Collector** (v0.99.0) - Telemetry data collection and routing
-- **Prometheus** (v2.50.1) - Metrics storage and querying
+- **OpenTelemetry Collector** (v0.103.1) - Telemetry data collection and routing
+- **Prometheus** (v2.52.0) - Metrics storage and querying
 - **Alertmanager** (v0.27.0) - Alert management and routing
-- **Tempo** (v2.3.1) - Distributed tracing backend
-- **Loki** (v2.9.4) - Log aggregation and querying
-- **Promtail** (v2.9.4) - Log collection agent
-- **Grafana** (v10.4.2) - Visualization and dashboards
+- **Tempo** (v2.5.0) - Distributed tracing backend
+- **Loki** (v2.9.10) - Log aggregation and querying
+- **Alloy** (v1.12.2) - Log and telemetry collection agent
+- **Grafana** (v10.4.5) - Visualization and dashboards
 - **Docker Compose** - Service orchestration
 
 **Primary Use Case:** Provides a production-ready observability platform that can be deployed from a single `docker compose up` command, with zero manual configuration steps required.
@@ -27,7 +27,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Docker** 20.10+ installed
 - **Docker Compose** v2.0+ installed
 - At least 4GB of free RAM
-- Ports 3000, 3100, 3200, 4317, 4318, 8888, 8889, 9080, 9090, 9093, 9095, 9096, 9411, 14250, 14268 available
+- Ports 3000, 3100, 3200, 4317, 4318, 8888, 8889, 9090, 9093, 9095, 9096, 9411, 12345, 14250, 14268 available
 
 ### Installation
 
@@ -39,7 +39,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 2. **Create data directories:**
    ```bash
-   mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager
+   mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager data/alloy
    chmod -R 777 data/
    ```
    
@@ -64,23 +64,24 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 ## Ports
 
-| Service              | Port  | Purpose                      | Access URL                      |
-|----------------------|-------|------------------------------|---------------------------------|
-| **Grafana**          | 3000  | Visualization UI             | http://localhost:3000           |
-| **Loki**             | 3100  | Log aggregation HTTP API     | http://localhost:3100           |
-| **Tempo**            | 3200  | Tempo HTTP API               | http://localhost:3200           |
-| **OpenTelemetry**    | 4317  | OTLP gRPC receiver           | localhost:4317                  |
-| **OpenTelemetry**    | 4318  | OTLP HTTP receiver           | localhost:4318                  |
-| **OpenTelemetry**    | 8888  | Collector telemetry metrics  | http://localhost:8888/metrics   |
-| **OpenTelemetry**    | 8889  | App metrics (Prometheus)     | http://localhost:8889/metrics   |
-| **Promtail**         | 9080  | Log collection agent HTTP    | http://localhost:9080           |
-| **Prometheus**       | 9090  | Metrics storage & query UI   | http://localhost:9090           |
-| **Alertmanager**     | 9093  | Alert management UI          | http://localhost:9093           |
-| **Tempo**            | 9095  | Tempo gRPC                   | localhost:9095                  |
-| **Loki**             | 9096  | Loki gRPC                    | localhost:9096                  |
-| **Tempo**            | 9411  | Zipkin receiver              | http://localhost:9411           |
-| **Tempo**            | 14250 | Jaeger gRPC receiver         | localhost:14250                 |
-| **Tempo**            | 14268 | Jaeger HTTP receiver         | http://localhost:14268          |
+| Service                   | Port  | Purpose                      | Access URL                      |
+|---------------------------|-------|------------------------------|---------------------------------|
+| **Grafana**               | 3000  | Visualization UI             | http://localhost:3000           |
+| **Loki**                  | 3100  | Log aggregation HTTP API     | http://localhost:3100           |
+| **Tempo**                 | 3200  | Tempo HTTP API               | http://localhost:3200           |
+| **OpenTelemetry**         | 4317  | OTLP gRPC receiver           | localhost:4317                  |
+| **OpenTelemetry**         | 4318  | OTLP HTTP receiver           | localhost:4318                  |
+| **OpenTelemetry**         | 8888  | Collector telemetry metrics  | http://localhost:8888/metrics   |
+| **OpenTelemetry**         | 8889  | App metrics (Prometheus)     | http://localhost:8889/metrics   |
+| **Prometheus**            | 9090  | Metrics storage & query UI   | http://localhost:9090           |
+| **Alertmanager**          | 9093  | Alert management UI          | http://localhost:9093           |
+| **Tempo**                 | 9095  | Tempo gRPC                   | localhost:9095                  |
+| **Loki**                  | 9096  | Loki gRPC                    | localhost:9096                  |
+| **Tempo**                 | 9411  | Zipkin receiver              | http://localhost:9411           |
+| **Alloy**                 | 12345 | Alloy HTTP/metrics           | http://localhost:12345          |
+| **Tempo**                 | 14250 | Jaeger gRPC receiver         | localhost:14250                 |
+| **Tempo**                 | 14268 | Jaeger HTTP receiver         | http://localhost:14268          |
+| **Telemetry Generator**   | 5001  | Demo app (apps profile)      | http://localhost:5001           |
 
 ---
 
@@ -123,8 +124,8 @@ curl -f http://localhost:8889/metrics
 # Check Loki
 curl -f http://localhost:3100/ready
 
-# Check Promtail targets
-curl -f http://localhost:9080/targets
+# Check Alloy
+curl -f http://localhost:12345/-/ready
 
 # Check Alertmanager
 curl -f http://localhost:9093/-/healthy
@@ -139,13 +140,17 @@ curl -s http://localhost:9093/api/v2/alerts | jq .
 
 The system uses Docker Compose profiles to control which services run:
 
-| Profile | Services                                                  | Purpose                  |
-|---------|-----------------------------------------------------------|--------------------------|
-| `core`  | otel-collector, tempo, loki, promtail, prometheus, grafana| Base observability stack |
+| Profile | Services                                                              | Purpose                  |
+|---------|-----------------------------------------------------------------------|--------------------------|
+| `core`  | otel-collector, tempo, loki, alloy, alertmanager, prometheus, grafana | Base observability stack |
+| `apps`  | telemetry-generator                                                   | Demo telemetry generator |
 
 **To start with a specific profile:**
 ```bash
 docker compose --profile core up -d
+
+# To also run the demo telemetry generator:
+docker compose --profile core --profile apps up -d
 ```
 
 ---
@@ -162,8 +167,10 @@ config/
 │   └── tempo.yaml              # Tempo distributed tracing config
 ├── loki/
 │   └── loki.yaml               # Loki log aggregation config
-├── promtail/
-│   └── promtail.yaml           # Promtail log collection config
+├── alloy/
+│   └── config.river            # Alloy log collection config (River format)
+├── alertmanager/
+│   └── alertmanager.yml        # Alertmanager routing config
 ├── prometheus/
 │   └── prometheus.yaml         # Prometheus scrape config
 └── grafana/
@@ -206,10 +213,10 @@ docker compose down -v
            ▼                 │      │      ▼
    ┌──────────────┐          │      │  ┌──────────────┐
    │  Prometheus  │          │      │  │     Loki     │◄─────┐
-   │   :9090      │          │      │  │    :3100     │      │
-   └──────┬───────┘          │      │  └──────┬───────┘      │
+   │   :9090      │◄────────►│      │  │    :3100     │      │
+   └──────┬───────┘  alerts  │      │  └──────┬───────┘      │
           │                  │      │         │               │
-          │ datasource       │      │         │ datasource    │
+          │ datasource       │traces│         │ datasource    │
           ▼                  ▼      ▼         ▼               │
      ┌──────────────────────────────────┐                     │
      │          Grafana                 │                     │
@@ -222,8 +229,8 @@ docker compose down -v
 └─────────────────┘                                        │  │
                                                            ▼  │
                                                     ┌──────────────┐
-                                                    │  Promtail    │
-                                                    │   :9080      │
+                                                    │    Alloy     │
+                                                    │   :12345     │
                                                     └──────────────┘
 ```
 
@@ -265,10 +272,10 @@ docker compose logs grafana
 docker compose down -v
 
 # Clean data directories
-rm -rf data/prometheus/* data/grafana/* data/tempo/* data/loki/*
+rm -rf data/prometheus/* data/grafana/* data/tempo/* data/loki/* data/alertmanager/* data/alloy/*
 
 # Recreate
-mkdir -p data/prometheus data/grafana data/tempo data/loki
+mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager data/alloy
 chmod -R 777 data/
 
 # Start fresh

@@ -52,10 +52,10 @@ To monitor other stacks, duplicate the main log panel and change:
   {compose_service="media-refinery"}    → {compose_service="YOUR_APP"}
 ```
 
-**Available services** (all logging to Loki):
+**Available services** (logging to Loki via Alloy):
 ```
-alertmanager, beets, grafana, loki, media-refinery, otel-collector,
-plex, prometheus, promtail, radarr, sonarr, tdarr, tempo
+alertmanager, alloy, grafana, loki, otel-collector,
+prometheus, tempo
 ```
 
 ---
@@ -74,9 +74,9 @@ plex, prometheus, promtail, radarr, sonarr, tdarr, tempo
 ## How Data Flows
 
 ```
-Your Apps (Media-Refinery, etc.)
+Your Apps (any container on observability-lab network)
     ↓
-Docker Containers → Logs → Promtail
+Docker Containers → Logs → Alloy (port 12345)
     ↓
 Loki (Log Storage)
     ↓
@@ -99,9 +99,8 @@ Grafana Dashboard Queries
 ## Available Data by Source
 
 ### Logs (via Loki)
-✅ **13 services** actively logging:
-- observability-lab stack: prometheus, grafana, loki, tempo, otel-collector, alertmanager, promtail
-- media-refinery stack: media-refinery, beets, plex, radarr, sonarr, tdarr
+✅ **7 core services** actively logging (via Alloy):
+- observability-lab stack: prometheus, grafana, loki, tempo, otel-collector, alertmanager, alloy
 
 **Query pattern**: `{compose_service="SERVICE_NAME"}`
 
@@ -176,7 +175,7 @@ See: `docs/examples/media-refinery-integration.md`
 
 ### To Monitor More Services
 1. Add them to the `observability-lab` Docker network
-2. They'll automatically be logged via Promtail
+2. They'll automatically be logged via Alloy (Docker container log discovery)
 3. Add Loki query panels with their `compose_service` name
 
 ---
@@ -190,9 +189,9 @@ See: `docs/examples/media-refinery-integration.md`
 4. **Check Prometheus**: Visit http://localhost:9090 and run same query
 
 ### No Logs Appearing
-1. **Verify Loki is running**: `docker ps | grep loki`
-2. **Check Promtail**: `docker ps | grep promtail` and `docker logs promtail | tail -20`
-3. **Verify network**: `docker network inspect observability-lab | grep media-refinery`
+1. **Verify Loki is running**: `docker compose ps loki`
+2. **Check Alloy**: `docker compose logs alloy --tail 20` and `curl http://localhost:12345/metrics | grep loki_source_docker`
+3. **Verify network**: `docker network inspect observability-lab`
 
 ### No Metrics for Component
 1. **Check target**: http://localhost:9090 → Status → Targets

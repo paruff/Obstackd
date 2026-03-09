@@ -68,17 +68,17 @@ This shows:
 
 ---
 
-## 2. LOGS (Loki) ✅ NOW ACTIVE
+## 2. LOGS (Loki) ✅ Active
 
-### What's New
+### Log Collection via Alloy
 
-**✅ FIXED:** Promtail upgraded to v3.0.0 - Docker logs now flowing!
+Container logs are collected by **Grafana Alloy** (v1.12.2), which automatically discovers
+all running Docker containers and ships their logs to Loki.
 
 ### What Logs You Have
 
-All container logs from both stacks:
-- **Obstackd services:** prometheus, loki, tempo, grafana, otel-collector, alertmanager
-- **Media-Refinery services:** media-refinery, beets, tdarr, radarr, sonarr, plex
+All container logs from the Obstackd core stack:
+- **Obstackd services:** prometheus, loki, tempo, grafana, otel-collector, alertmanager, alloy
 
 ### How to View Logs in Grafana
 
@@ -251,15 +251,16 @@ up{job="otel-collector"}
    ```
    Should show: ["alertmanager", "media-refinery", "prometheus", ...]
 
-2. If empty, check promtail status:
+2. If empty, check Alloy status:
    ```bash
-   docker logs promtail --tail 20
+   docker compose logs alloy --tail 20
+   curl http://localhost:12345/metrics | grep loki_source_docker
    ```
-   Should see: `msg="successfully sent entries to loki"`
+   Should see active targets.
 
 3. If errors, restart:
    ```bash
-   docker compose restart promtail
+   docker compose restart alloy
    ```
 
 ### "I don't see Media-Refinery logs specifically"
