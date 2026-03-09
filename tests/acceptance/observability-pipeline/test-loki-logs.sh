@@ -6,8 +6,10 @@
 set -euo pipefail
 
 # Configuration
-readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-readonly TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+readonly TIMESTAMP
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TEST_DIR
 readonly REPORT_DIR="${TEST_DIR}/reports/loki-${TIMESTAMP}"
 readonly LOG_FILE="${REPORT_DIR}/test-execution.log"
 readonly SUCCESS_FILE="${REPORT_DIR}/SUCCESS"
@@ -70,7 +72,9 @@ record_test_result() {
 
 # Component Health Checks
 check_loki_health() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="COMP-HEALTH-LOKI"
     
     echo -e "\n${BLUE}[${test_id}] Checking Loki Health${NC}"
@@ -90,7 +94,9 @@ check_loki_health() {
 }
 
 check_alloy_health() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="COMP-HEALTH-ALLOY"
     
     echo -e "\n${BLUE}[${test_id}] Checking Grafana Alloy Health${NC}"
@@ -123,22 +129,27 @@ check_alloy_health() {
 
 # Test log ingestion
 test_log_ingestion() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="LOG-INGESTION"
     
     echo -e "\n${BLUE}[${test_id}] Testing Log Ingestion${NC}"
     
     # Wait for logs to be ingested
     local attempt
-    local logs_found=false
     
     for attempt in $(seq 1 ${RETRY_ATTEMPTS}); do
         echo "  Attempt ${attempt}/${RETRY_ATTEMPTS}: Querying Loki for container logs..."
         
         # Query Loki for any docker logs in the last 5 minutes
         local query_result
-        local start_time=$(date -u -d '5 minutes ago' +%s)${NANOSECONDS_SUFFIX}
-        local end_time=$(date -u +%s)${NANOSECONDS_SUFFIX}
+        local start_time
+
+        start_time="$(date -u -d '5 minutes ago' +%s)${NANOSECONDS_SUFFIX}"
+        local end_time
+
+        end_time="$(date -u +%s)${NANOSECONDS_SUFFIX}"
         
         query_result=$(curl -G -s "http://localhost:3100/loki/api/v1/query_range" \
             --data-urlencode 'query={job="docker"}' \
@@ -163,7 +174,6 @@ test_log_ingestion() {
                 echo "  Sample log: ${sample_logs}"
             fi
             
-            logs_found=true
             record_test_result "${test_id}" "PASS" $(( $(date +%s) - start )) "Logs ingested successfully (${result_count} streams)"
             return 0
         fi
@@ -181,7 +191,9 @@ test_log_ingestion() {
 
 # Test log labels
 test_log_labels() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="LOG-LABELS"
     
     echo -e "\n${BLUE}[${test_id}] Testing Log Labels${NC}"
@@ -225,15 +237,21 @@ test_log_labels() {
 
 # Test LogQL query
 test_logql_query() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="LOGQL-QUERY"
     
     echo -e "\n${BLUE}[${test_id}] Testing LogQL Query${NC}"
     
     # Query for a specific container (grafana)
     local query_result
-    local start_time=$(date -u -d '10 minutes ago' +%s)${NANOSECONDS_SUFFIX}
-    local end_time=$(date -u +%s)${NANOSECONDS_SUFFIX}
+    local start_time
+
+    start_time="$(date -u -d '10 minutes ago' +%s)${NANOSECONDS_SUFFIX}"
+    local end_time
+
+    end_time="$(date -u +%s)${NANOSECONDS_SUFFIX}"
     
     query_result=$(curl -G -s "http://localhost:3100/loki/api/v1/query_range" \
         --data-urlencode 'query={container="grafana"}' \
@@ -257,7 +275,9 @@ test_logql_query() {
 
 # Test log-trace correlation configuration
 test_trace_correlation_config() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="TRACE-CORRELATION-CONFIG"
     
     echo -e "\n${BLUE}[${test_id}] Testing Trace Correlation Configuration${NC}"
@@ -294,7 +314,9 @@ test_trace_correlation_config() {
 
 # Generate summary report
 generate_summary_report() {
-    local end_time=$(date +%s)
+    local end_time
+
+    end_time=$(date +%s)
     local total_duration=$((end_time - START_TIME))
     
     local passed=0

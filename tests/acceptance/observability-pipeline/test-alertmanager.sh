@@ -6,14 +6,15 @@
 set -euo pipefail
 
 # Configuration
-readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-readonly TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+readonly TIMESTAMP
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TEST_DIR
 readonly REPORT_DIR="${TEST_DIR}/reports/${TIMESTAMP}"
 readonly LOG_FILE="${REPORT_DIR}/test-execution.log"
 
 # Test Constants
 readonly MAX_WAIT=120
-readonly RETRY_INTERVAL=5
 
 # Colors for output
 readonly GREEN='\033[0;32m'

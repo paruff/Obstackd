@@ -6,8 +6,10 @@
 set -euo pipefail
 
 # Configuration
-readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-readonly TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+readonly TIMESTAMP
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TEST_DIR
 readonly REPORT_DIR="${TEST_DIR}/reports/${TIMESTAMP}"
 readonly LOG_FILE="${REPORT_DIR}/test-execution.log"
 readonly SUCCESS_FILE="${REPORT_DIR}/SUCCESS"
@@ -74,7 +76,9 @@ record_test_result() {
 
 # Component Health Checks
 check_otel_collector_health() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="COMP-HEALTH-OTEL"
     
     echo -e "\n${BLUE}[${test_id}] Checking OpenTelemetry Collector Health${NC}"
@@ -118,7 +122,9 @@ check_otel_collector_health() {
 }
 
 check_prometheus_scraping() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="COMP-HEALTH-PROM"
     
     echo -e "\n${BLUE}[${test_id}] Checking Prometheus Scraping${NC}"
@@ -177,7 +183,9 @@ check_prometheus_scraping() {
 }
 
 check_grafana_datasource() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="COMP-HEALTH-GRAFANA-DS"
     
     echo -e "\n${BLUE}[${test_id}] Checking Grafana Datasource${NC}"
@@ -211,7 +219,9 @@ check_grafana_datasource() {
 
 # Main Acceptance Test: OTel Metrics in Grafana
 test_otel_metrics_in_grafana() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="E2E-OTEL-GRAFANA"
     
     echo -e "\n${BLUE}[${test_id}] Executing End-to-End Test: OTel Metrics in Grafana${NC}"
@@ -352,7 +362,9 @@ EOF
 
 # Generate Test Report
 generate_test_report() {
-    local end_time=$(date +%s)
+    local end_time
+
+    end_time=$(date +%s)
     local total_duration=$((end_time - START_TIME))
     
     echo -e "\n${BLUE}📊 Generating Test Report${NC}"
