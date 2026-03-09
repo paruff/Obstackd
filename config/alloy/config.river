@@ -31,3 +31,19 @@ loki.write "loki" {
     url = "http://loki:3100/loki/api/v1/push"
   }
 }
+
+prometheus.exporter.cadvisor "containers" {
+  docker_host = "unix:///var/run/docker.sock"
+}
+
+prometheus.scrape "cadvisor" {
+  targets    = prometheus.exporter.cadvisor.containers.targets
+  forward_to = [prometheus.remote_write.prometheus.receiver]
+  scrape_interval = "15s"
+}
+
+prometheus.remote_write "prometheus" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}

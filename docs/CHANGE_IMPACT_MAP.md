@@ -17,6 +17,7 @@
 | Alloy port (default 12345) | Prometheus scrape config, `docs/` port reference, acceptance tests |
 | Alertmanager port (default 9093) | Prometheus `alerting.alertmanagers` config, Grafana Alertmanager datasource URL, `docs/` port reference |
 | Grafana port (default 3000) | `scripts/` health checks, acceptance tests, `README.md` |
+| Node Exporter port (default 9100) | Prometheus scrape config, `docs/` port reference, acceptance tests |
 | OTEL Collector ports (4317 gRPC / 4318 HTTP / 8889 metrics) | Any upstream services sending telemetry, Prometheus scrape config |
 | Volume mount paths | `config/` file paths that reference them, `docs/RUNBOOKS.md` backup procedures |
 | Network name | All services that reference it, `scripts/` that use `docker network inspect` |

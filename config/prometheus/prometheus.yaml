@@ -79,3 +79,33 @@ scrape_configs:
     scrape_interval: 30s
     metrics_path: '/metrics'
     scheme: 'http'
+
+  # Alloy
+  - job_name: 'alloy'
+    static_configs:
+      - targets: ['alloy:12345']
+        labels:
+          component: 'alloy'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  # Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          component: 'grafana'
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  # Node Exporter
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          component: 'node-exporter'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scheme: 'http'
