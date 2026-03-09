@@ -6,8 +6,10 @@
 set -euo pipefail
 
 # Configuration
-readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-readonly TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+readonly TIMESTAMP
+TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly TEST_DIR
 readonly REPORT_DIR="${TEST_DIR}/reports/dashboard-validation-${TIMESTAMP}"
 readonly LOG_FILE="${REPORT_DIR}/test-execution.log"
 
@@ -53,7 +55,9 @@ record_test_result() {
 
 # Verify infrastructure is ready
 check_infrastructure_ready() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="INFRA-READY"
     
     echo -e "\n${BLUE}[${test_id}] Checking Infrastructure${NC}"
@@ -84,7 +88,9 @@ check_infrastructure_ready() {
 
 # Verify Grafana dashboards are provisioned
 check_dashboards_provisioned() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="DASHBOARD-PROVISIONING"
     
     echo -e "\n${BLUE}[${test_id}] Checking Dashboard Provisioning${NC}"
@@ -129,7 +135,9 @@ check_dashboards_provisioned() {
 
 # Verify metrics data in Prometheus
 check_metrics_available() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="METRICS-DATA"
     
     echo -e "\n${BLUE}[${test_id}] Checking Metrics Availability${NC}"
@@ -162,7 +170,9 @@ check_metrics_available() {
 
 # Verify logs data in Loki via Alloy
 check_logs_available() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="LOGS-DATA"
     
     echo -e "\n${BLUE}[${test_id}] Checking Logs Availability (Alloy → Loki)${NC}"
@@ -205,7 +215,9 @@ check_logs_available() {
 
 # Verify traces data in Tempo
 check_traces_available() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="TRACES-DATA"
     
     echo -e "\n${BLUE}[${test_id}] Checking Traces Availability${NC}"
@@ -218,9 +230,7 @@ check_traces_available() {
         echo -e "  ${GREEN}✓${NC} Tempo is ready"
         
         # Try to query for traces (may be empty but endpoint should work)
-        local traces_response
-        traces_response=$(curl -s "http://localhost:3200/api/traces?limit=10" 2>/dev/null || echo '{"traces":[]}')
-        
+        curl -s "http://localhost:3200/api/traces?limit=10" > /dev/null 2>&1 || true
         echo -e "${GREEN}✓ Traces endpoint accessible${NC}"
         record_test_result "${test_id}" "PASS" $(( $(date +%s) - start )) "Traces endpoint ready"
         return 0
@@ -233,7 +243,9 @@ check_traces_available() {
 
 # Test dashboard rendering for metrics
 test_dashboard_metrics_rendering() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="DASHBOARD-METRICS-RENDER"
     
     echo -e "\n${BLUE}[${test_id}] Testing Dashboard Metrics Rendering${NC}"
@@ -262,7 +274,9 @@ test_dashboard_metrics_rendering() {
 
 # Test dashboard rendering for logs
 test_dashboard_logs_queries() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="DASHBOARD-LOGS-QUERIES"
     
     echo -e "\n${BLUE}[${test_id}] Testing Dashboard Log Queries${NC}"
@@ -289,7 +303,9 @@ test_dashboard_logs_queries() {
 
 # Test trace correlation configuration
 test_trace_correlation() {
-    local start=$(date +%s)
+    local start
+
+    start=$(date +%s)
     local test_id="TRACE-CORRELATION"
     
     echo -e "\n${BLUE}[${test_id}] Testing Trace Correlation${NC}"
@@ -320,12 +336,10 @@ test_trace_correlation() {
 
 # Generate summary report
 generate_summary_report() {
-    local end_time=$(date +%s)
+    local end_time
+
+    end_time=$(date +%s)
     local total_duration=$((end_time - START_TIME))
-    
-    local passed=0
-    local failed=0
-    local warned=0
     
     local total=$((TESTS_PASSED + TESTS_FAILED))
     
@@ -370,7 +384,7 @@ EOF
 
 ❌ **DASHBOARD VALIDATION FAILED**
 
-${failed} critical test(s) failed. Review the test logs for details.
+${TESTS_FAILED} critical test(s) failed. Review the test logs for details.
 
 EOF
         return 1
@@ -381,10 +395,8 @@ EOF
 main() {
     initialize_test
     
-    local overall_result=0
-    
     # Infrastructure checks
-    check_infrastructure_ready || overall_result=1
+    check_infrastructure_ready || true
     check_dashboards_provisioned || true  # Warning only
     
     # Data availability checks

@@ -5,9 +5,9 @@
 set -euo pipefail
 
 # Configuration
-readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+readonly PROJECT_ROOT
 readonly TEST_DIR="${PROJECT_ROOT}/tests/acceptance/observability-pipeline"
-readonly COMPOSE_FILE="${PROJECT_ROOT}/compose.yaml"
 
 # Colors
 readonly GREEN='\033[0;32m'
@@ -156,7 +156,8 @@ run_test_scenario() {
 
 # Function to generate documentation
 generate_documentation() {
-    local report_dir=$(find "${TEST_DIR}/reports" -type d -name "2*" 2>/dev/null | sort -r | head -1)
+    local report_dir
+    report_dir=$(find "${TEST_DIR}/reports" -type d -name "2*" 2>/dev/null | sort -r | head -1)
     
     if [[ -n "${report_dir}" ]] && [[ -f "${report_dir}/summary.md" ]]; then
         echo -e "${BLUE}Test report available at: ${report_dir}/summary.md${NC}"
