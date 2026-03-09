@@ -1,0 +1,49 @@
+name: PR Size Gate
+
+# DORA 2025 (INSTAB-01): Control systems must be proportionally stronger as AI increases change volume.
+# Blocks PRs > 400 lines. Override: apply `large-pr-approved` label (write-access humans only).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  pr-size-check:
+    name: "🔢 PR Size Gate (400 line limit)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log job start
+        run: |
+          echo "job-start:$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "sha:${{ github.sha }}"
+
+      - name: Check PR size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            const total = pr.additions + pr.deletions;
+            const limit = 400;
+            const hasOverride = pr.labels.some(l => l.name === 'large-pr-approved');
+            console.log(`PR #${pr.number}: +${pr.additions} -${pr.deletions} = ${total} lines`);
+            if (hasOverride) {
+              console.log('✅ large-pr-approved override accepted');
+              return;
+            }
+            if (total > limit) {
+              core.setFailed(
+                `❌ PR size: ${total} lines (limit: ${limit})\n` +
+                `Split into smaller PRs or get large-pr-approved label from a human.\n` +
+                `DORA 2025: AI assistance increases average PR size by ~154%.`
+              );
+            } else {
+              console.log(`✅ PR size: ${total} lines — within limit`);
+            }
+
+      - name: Log job finish
+        if: always()
+        run: echo "job-finish:$(date -u +%Y-%m-%dT%H:%M:%SZ)"
