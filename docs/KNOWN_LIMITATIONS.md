@@ -1,146 +1,179 @@
 # Known Limitations — Obstackd
 
-> Read this before making any changes to ensure you don't make existing issues worse.
-> Update this file whenever a new limitation or version-specific bug is discovered.
-> Reference: `AGENTS.md` section 3, priority 4 context file.
+> Check this before reporting a bug. These are known issues that are not bugs in Obstackd itself.
+> Update this file when a new limitation is confirmed or a workaround is found.
 
 ---
 
-## 1. Missing `healthcheck:` on `otel-collector`
+## Security & Authentication
 
-**Severity:** Medium  
-**Service:** `otel-collector`  
-**Rule violated:** "All services must have `healthcheck:` defined" (AGENTS.md §4)
+### No TLS Between Internal Services
 
-The `otel-collector` service in `compose.yaml` has no `healthcheck:` block, which means:
-- Docker cannot report a meaningful health status for it
-- Downstream services cannot express `depends_on: otel-collector: condition: service_healthy`
-- CI and acceptance tests cannot reliably wait for the collector to be ready
+**Limitation:** All communication between services (OTEL Collector → Tempo, Alloy → Loki, etc.)
+uses plaintext HTTP/gRPC with `insecure: true`. This is intentional for a local development setup.
 
-**Workaround:** Use a `start_period` sleep in scripts or `depends_on` without health condition.
+**Impact:** Not suitable for production without adding mutual TLS.
 
-**Fix required:** Two steps are needed (both require human approval per PM–Agent contract):
-1. Add the `health_check` extension to `config/otel/collector.yaml` (default port 13133, path `/`).
-2. Add a `healthcheck:` to the `otel-collector` service in `compose.yaml` targeting
-   `http://localhost:13133/`.
-
-Until the extension is configured, an alternative is to probe the collector's internal
-metrics endpoint: `http://localhost:8888/metrics`.
+**Workaround:** For production, add TLS certificates and update all exporter/endpoint configs
+in `config/otel/collector.yaml`, `config/alloy/config.river`, and Grafana datasource URLs.
 
 ---
 
-## 2. Missing `healthcheck:` on `alloy`
+### No Authentication on Loki, Tempo, Prometheus
 
-**Severity:** Medium  
-**Service:** `alloy`  
-**Rule violated:** "All services must have `healthcheck:` defined" (AGENTS.md §4)
+**Limitation:** All backend services accept unauthenticated requests on their exposed ports.
 
-The `alloy` service in `compose.yaml` has no `healthcheck:` block. Alloy exposes a
-`/-/ready` endpoint on port `12345`.
+**Impact:** Anyone with network access can read or write telemetry data.
 
-**Workaround:** Acceptance tests use a fixed sleep before checking Alloy metrics.
-
-**Fix required:** Add a `healthcheck:` targeting `http://localhost:12345/-/ready`. Requires
-human approval per PM–Agent contract because it modifies `compose.yaml`.
+**Workaround:** Restrict access at the network/firewall level. Enable `auth_enabled: true` in
+`config/loki/loki.yaml` for multi-tenant setups.
 
 ---
 
-## 3. Missing `restart: unless-stopped` on `otel-collector`
+## Data Storage
 
-**Severity:** Low  
-**Service:** `otel-collector`
+### Local Filesystem Storage Only
 
-All other core services have `restart: unless-stopped`, but `otel-collector` does not.
-If the collector process crashes, it will not be automatically restarted.
+**Limitation:** All persistent data (metrics, traces, logs) is stored on the local filesystem
+under `./data/`. There is no object storage backend configured.
 
-**Fix required:** Add `restart: unless-stopped` to the `otel-collector` service definition.
-Requires human approval per PM–Agent contract.
+**Impact:**
+- Data is lost if the host disk fails
+- No horizontal scaling
+- Tempo local storage is limited by disk capacity
 
----
-
-## 4. `otel-collector` missing resource limits (`deploy.resources`)
-
-**Severity:** Low  
-**Service:** `otel-collector`
-
-All other core services define `deploy.resources` with CPU and memory limits and
-reservations. The `otel-collector` service has no resource constraints, which can allow
-it to consume unbounded host resources under high telemetry load.
-
-**Fix required:** Add a `deploy.resources` block to `otel-collector`. Requires human
-approval per PM–Agent contract.
+**Workaround:** For production, configure object storage (S3, GCS) in each service's config.
 
 ---
 
-## 5. Traces are empty until an application is instrumented
+### Tempo Storage Quota
 
-**Severity:** Informational  
-**Service:** `tempo`
+**Limitation:** Tempo is configured with local storage. There is no automatic size limit on
+trace storage beyond the host disk capacity.
 
-Tempo is running and healthy, but the traces view in Grafana will be empty until at
-least one application sends spans to the OTEL Collector (ports 4317 gRPC / 4318 HTTP).
+**Impact:** Long-running deployments may fill the disk.
 
-**Workaround:** Use the `telemetry-generator` application (defined in `compose.yaml` under
-the `apps` profile) to produce synthetic traces for testing:
-
-```bash
-docker compose --profile core --profile apps up -d
-```
-
-This starts the `telemetry-generator` container which emits OTLP spans to the collector.
+**Workaround:** Monitor `./data/tempo` disk usage. Set `max_block_bytes` in
+`config/tempo/tempo.yaml` to limit storage.
 
 ---
 
-## 6. Alloy log discovery delay after startup
+## Operational
 
-**Severity:** Low  
-**Service:** `alloy`
+### `chmod 777 data/` Required for Startup
 
-After the stack starts, Alloy may take 30–60 seconds to discover running containers via
-the Docker socket. Log queries against Loki will return no results during this window.
+**Limitation:** The `data/` directories must be world-writable for Docker containers to write
+persistent data. This is because container processes run as non-root UIDs that differ from
+the host user.
 
-**Workaround:** Wait at least 60 seconds after `docker compose up` before querying logs.
-Acceptance tests should account for this delay.
+**Impact:** Overly permissive permissions on the host filesystem.
 
----
-
-## 7. Alloy may duplicate logs on first start
-
-**Severity:** Low  
-**Service:** `alloy`
-
-On the very first startup (before `data/alloy/positions.yaml` is created), Alloy has no
-record of previously shipped log positions. If containers were already running before
-Alloy started, some log lines may be shipped twice.
-
-**Workaround:** Expected on first run; automatic on subsequent restarts once
-`positions.yaml` exists.
+**Workaround:** The smoke tests apply `chmod 777 data/` automatically. For production, configure
+proper UID/GID mappings using Docker `user:` and `group_add:` settings.
 
 ---
 
-## Recently Resolved
+### Single-Node Deployment Only
 
-### AGENTS.md stack version table was out of date
+**Limitation:** `compose.yaml` deploys all services on a single Docker host. There is no
+built-in support for distributing services across multiple nodes.
 
-**File:** `AGENTS.md`  
-**Status:** ✅ Resolved
+**Impact:** No high-availability for any individual service.
 
-The stack version table in `AGENTS.md` section 1 listed versions that did not match
-the pinned image tags in `compose.yaml`. Also missing: Loki, Alloy, and Alertmanager.
-The table has been corrected and now reflects the actual images in `compose.yaml`.
+**Workaround:** For HA, migrate to Kubernetes or use managed cloud observability services.
 
 ---
 
-## Version Reference (as of last audit)
+## Alloy (Log Collection)
 
-| Service | Image in `compose.yaml` | Notes |
-|---|---|---|
-| OpenTelemetry Collector | `otel/opentelemetry-collector-contrib:0.103.1` | |
-| Prometheus | `prom/prometheus:v2.52.0` | |
-| Tempo | `grafana/tempo:2.5.0` | |
-| Loki | `grafana/loki:2.9.10` | |
-| Grafana | `grafana/grafana:10.4.5` | |
-| Alloy | `grafana/alloy:v1.12.2` | Replaced Promtail |
-| Alertmanager | `prom/alertmanager:v0.27.0` | |
+### Docker Socket Access Required
 
-> Always cross-check against `compose.yaml` — this table may lag behind image bumps.
+**Limitation:** Alloy requires read access to `/var/run/docker.sock` to discover and collect
+container logs. On some Docker Desktop configurations, the socket path may differ.
+
+**Impact:** Alloy may fail to start or collect no logs if the socket is not accessible.
+
+**Workaround:** Verify that `/var/run/docker.sock` exists on the host. On macOS with Docker
+Desktop, the socket may be at `/var/run/docker.sock` via a symlink. Check
+`docker compose logs alloy` for permission errors.
+
+---
+
+### Alloy Positions File
+
+**Limitation:** Alloy tracks log read positions in `/var/lib/alloy/positions.yaml` (persisted
+in `./data/alloy`). If the positions file is deleted or corrupted, Alloy will re-read all
+container logs from the beginning.
+
+**Impact:** Duplicate log entries in Loki after an Alloy data directory reset.
+
+**Workaround:** This resolves itself after the log retention period. To prevent: do not
+delete `./data/alloy` while containers are running.
+
+---
+
+## Grafana
+
+### Default Credentials
+
+**Limitation:** The default Grafana admin credentials are `admin`/`admin` (configurable via
+`.env`). If `.env` is not present, these weak defaults apply.
+
+**Impact:** Anyone with access to port 3000 can log in as admin.
+
+**Workaround:** Always set `GRAFANA_ADMIN_PASSWORD` in `.env` before first run. The `.env`
+file is gitignored and will not be committed.
+
+---
+
+### Dashboard UIDs Must Be Stable
+
+**Limitation:** Cross-dashboard links use UIDs. If a dashboard is re-imported with a
+different UID, those links will break.
+
+**Impact:** Broken "Open in" links between dashboards.
+
+**Workaround:** Always export dashboards from Grafana UI and keep the `uid` field set to a
+stable value in the JSON. Never let Grafana auto-generate UIDs.
+
+---
+
+## Prometheus
+
+### 30-Day Retention Only
+
+**Limitation:** Prometheus is configured with `--storage.tsdb.retention.time=30d`. Metrics
+older than 30 days are automatically deleted.
+
+**Impact:** No long-term metrics history beyond 30 days.
+
+**Workaround:** Enable remote-write to a long-term storage backend (Thanos, Cortex, Mimir),
+or increase `--storage.tsdb.retention.time` (requires more disk).
+
+---
+
+## Alertmanager
+
+### Webhook Receiver Only (No Email/Slack by Default)
+
+**Limitation:** The default `config/alertmanager/alertmanager.yml` uses a webhook receiver
+for testing. No email, Slack, or PagerDuty integration is configured out of the box.
+
+**Impact:** Alerts are not sent to any notification channel by default.
+
+**Workaround:** Edit `config/alertmanager/alertmanager.yml` to add your notification
+receivers. See [Alertmanager docs](https://prometheus.io/docs/alerting/latest/configuration/).
+
+---
+
+## Telemetry Generator (`apps` profile)
+
+### Demo Application Only
+
+**Limitation:** The `telemetry-generator` service (`apps` profile) is a demo application
+for testing the telemetry pipeline. It is not intended for production use.
+
+**Impact:** Do not rely on it for production telemetry.
+
+**Workaround:** Replace with your own instrumented application. See
+`apps/telemetry-generator/README.md` for the telemetry patterns it uses.

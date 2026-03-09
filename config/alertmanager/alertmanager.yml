@@ -95,13 +95,13 @@ receivers:
       - url: 'http://host.docker.internal:5001/webhook/critical'
         send_resolved: true
         max_alerts: 0
-    # Uncomment for Slack integration
-    # slack_configs:
-    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
-    #     channel: '#alerts-critical'
-    #     title: '{{ .GroupLabels.alertname }}'
-    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-    #     send_resolved: true
+  # Uncomment for Slack integration (add under critical-alerts):
+  # slack_configs:
+  #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+  #     channel: '#alerts-critical'
+  #     title: '{{ .GroupLabels.alertname }}'
+  #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+  #     send_resolved: true
 
   # Warning alerts receiver
   - name: 'warning-alerts'
@@ -109,12 +109,12 @@ receivers:
       - url: 'http://host.docker.internal:5001/webhook/warning'
         send_resolved: true
         max_alerts: 0
-    # Uncomment for email notifications
-    # email_configs:
-    #   - to: 'team@example.com'
-    #     headers:
-    #       Subject: 'Warning Alert: {{ .GroupLabels.alertname }}'
-    #     send_resolved: true
+  # Uncomment for email notifications (add under warning-alerts):
+  # email_configs:
+  #   - to: 'team@example.com'
+  #     headers:
+  #       Subject: 'Warning Alert: {{ .GroupLabels.alertname }}'
+  #     send_resolved: true
 
   # Info alerts receiver
   - name: 'info-alerts'

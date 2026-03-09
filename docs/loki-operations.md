@@ -65,7 +65,7 @@ Location: `config/loki/loki.yaml`
 
 ### Alloy Configuration
 
-Location: `config/alloy/alloy.yaml`
+Location: `config/alloy/config.river`
 
 **Key Settings:**
 - **Docker Service Discovery**: Automatically discovers running containers

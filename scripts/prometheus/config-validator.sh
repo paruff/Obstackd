@@ -2,10 +2,10 @@
 # Prometheus Configuration Validator
 # Validates Prometheus Docker Compose configuration and directory structure
 
-set -e
+set -euo pipefail
 
 # Prometheus version (should match compose.yaml)
-PROMETHEUS_VERSION="v2.50.1"
+PROMETHEUS_VERSION="v2.52.0"
 
 echo "🔍 Validating Prometheus Docker Compose Configuration..."
 echo ""

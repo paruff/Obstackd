@@ -1,3 +1,4 @@
+---
 name: observability-lab
 
 services:
@@ -17,6 +18,18 @@ services:
       - prometheus
       - tempo
       - loki
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "plane=obstackd"
+      - "component=otel-collector"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["core"]
 
   tempo:
@@ -57,6 +70,12 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "tempo"
+    labels:
+      - "plane=obstackd"
+      - "component=tracing"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["core"]
 
   loki:
@@ -93,6 +112,12 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "loki"
+    labels:
+      - "plane=obstackd"
+      - "component=logging"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["core"]
 
   alloy:
@@ -123,12 +148,24 @@ services:
         reservations:
           cpus: '0.1'
           memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:12345/-/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
         tag: "alloy"
+    labels:
+      - "plane=obstackd"
+      - "component=collector"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["core"]
 
   prometheus:
@@ -177,6 +214,12 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "prometheus"
+    labels:
+      - "plane=obstackd"
+      - "component=metrics"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["core"]
 
   alertmanager:
@@ -217,6 +260,12 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "alertmanager"
+    labels:
+      - "plane=obstackd"
+      - "component=alerting"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["core"]
 
   grafana:
@@ -224,7 +273,7 @@ services:
     container_name: grafana
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
@@ -262,6 +311,12 @@ services:
         max-size: "10m"
         max-file: "3"
         tag: "grafana"
+    labels:
+      - "plane=obstackd"
+      - "component=visualization"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["core"]
 
   # Demo application that generates telemetry for testing
@@ -284,16 +339,27 @@ services:
         reservations:
           cpus: '0.1'
           memory: 64M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
         tag: "telemetry-generator"
+    labels:
+      - "plane=obstackd"
+      - "component=telemetry-generator"
+      - "managed-by=fawkes"
+    networks:
+      - observability
     profiles: ["apps"]
 
 networks:
-  default:
+  observability:
     name: observability-lab
     driver: bridge
-    external: false

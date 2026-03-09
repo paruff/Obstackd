@@ -217,30 +217,26 @@ docker compose up -d --force-recreate media-refinery
 
 ### Issue: No logs in Grafana
 
-**Cause:** Media-Refinery doesn't have OpenTelemetry SDK for logs
+**Cause:** The application container is not on the `observability-lab` network.
 
-**Solution:** Use Docker log shipping with Promtail
-
-Edit `Obstackd/config/promtail/promtail.yaml`:
+**Solution:** Alloy automatically collects Docker container logs for all containers on the
+`observability-lab` network. Ensure the container is joined to this network:
 
 ```yaml
-scrape_configs:
-  # ... existing configs ...
+# In your docker-compose.yml:
+services:
+  media-refinery:
+    networks:
+      - your-app-network
+      - observability-lab  # ← Join Obstackd network for auto log collection
 
-  - job_name: media-refinery-logs
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-        filters:
-          - name: name
-            values: ["media-refinery"]
-    relabel_configs:
-      - source_labels: ['__meta_docker_container_name']
-        target_label: 'container_name'
-      - source_labels: ['__meta_docker_container_log_stream']
-        target_label: 'stream'
+networks:
+  observability-lab:
+    external: true
 ```
 
-Then mount Docker socket in Promtail service (already configured).
+After joining the network, Alloy will automatically discover and ship the logs to Loki.
+No Promtail or additional configuration required.
 
 ### Issue: Telemetry works but no traces
 
