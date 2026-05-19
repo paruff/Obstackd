@@ -14,7 +14,7 @@ fi
 
 export GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:-}"
 
-if [ -z "${GRAFANA_ADMIN_PASSWORD}" ] || [ "${GRAFANA_ADMIN_PASSWORD}" = "admin" ] || [ "${GRAFANA_ADMIN_PASSWORD}" = "changeme" ]; then
+if [ -z "${GRAFANA_ADMIN_PASSWORD}" ] || [ "${GRAFANA_ADMIN_PASSWORD}" = "admin" ] || [ "${GRAFANA_ADMIN_PASSWORD}" = "changeme" ] || [ "${GRAFANA_ADMIN_PASSWORD}" = "REPLACE_ME_set_a_real_password_here" ]; then
   cat <<'EOF'
 ❌ Refusing to start: GRAFANA_ADMIN_PASSWORD is missing or insecure.
 Set a non-default Grafana admin password before starting the stack.
