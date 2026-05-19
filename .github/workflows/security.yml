@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Scan repo for secrets & vulns
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           scan-type: fs
           ignore-unfixed: true

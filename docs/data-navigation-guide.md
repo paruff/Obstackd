@@ -98,7 +98,7 @@ scrapes all Docker container stdout/stderr logs via the Docker socket.
    ```
    {job="docker"}                      # All container logs
    {compose_service="grafana"}         # Specific service
-   {compose_project="observability-lab"} # All uFawkesObs containers
+   {compose_project="ufawkesobs"} # All uFawkesObs containers
    ```
 
 ---

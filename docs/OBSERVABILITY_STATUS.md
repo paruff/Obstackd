@@ -69,7 +69,7 @@ Quick Filters:
   {compose_service="media-refinery"}     → App logs
   {compose_service="prometheus"}         → Prometheus logs
   {stream="stderr"}                      → Error logs only
-  {compose_project="observability-lab"} → uFawkesObs stack
+  {compose_project="ufawkesobs"} → uFawkesObs stack
 ```
 
 ### 3. TRACES ⚠️
