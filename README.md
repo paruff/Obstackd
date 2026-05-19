@@ -14,7 +14,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Grafana** (v10.4.5) - Visualization and dashboards
 - **Docker Compose** - Service orchestration
 
-**Primary Use Case:** Provides a production-ready observability platform that can be deployed from a single `docker compose up` command, with zero manual configuration steps required.
+**Primary Use Case:** Provides a production-ready observability platform deployable with `make up`. Configure secure Grafana credentials in `.env` first. Startup validation blocks insecure deployments.
 
 **Multi-Stack Support:** Designed to serve as a centralized observability platform for multiple Docker Compose applications. See [Multi-Stack Integration Guide](docs/multi-stack-integration.md) for connecting other applications.
 
@@ -37,7 +37,14 @@ A **Docker Compose-based observability platform** that provides a complete monit
    cd uFawkesObs
    ```
 
-2. **Create data directories:**
+2. **Create and configure environment variables:**
+   ```bash
+   cp .env.example .env
+   $EDITOR .env
+   ```
+   Set both `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD` in `.env`.
+
+3. **Create data directories:**
    ```bash
    mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager data/alloy
    chmod -R 777 data/
@@ -45,17 +52,17 @@ A **Docker Compose-based observability platform** that provides a complete monit
    
    > **Note:** `chmod 777` is used for maximum compatibility across different Docker setups. For production deployments, consider using more restrictive permissions based on your Docker user/group configuration.
 
-3. **Start the observability stack:**
+4. **Start the observability stack:**
    ```bash
-   docker compose --profile core up -d
+   make up
    ```
 
-4. **Wait for services to initialize:**
+5. **Wait for services to initialize:**
    ```bash
    sleep 30
    ```
 
-5. **Verify services are running:**
+6. **Verify services are running:**
    ```bash
    docker compose ps
    ```
@@ -89,8 +96,8 @@ A **Docker Compose-based observability platform** that provides a complete monit
 
 ### Grafana Dashboard
 - **URL:** http://localhost:3000
-- **Username:** `admin`
-- **Password:** `admin`
+- **Username:** `GRAFANA_ADMIN_USER` from `.env` (default in `.env.example`: `admin`)
+- **Password:** `GRAFANA_ADMIN_PASSWORD` from `.env` (validated by `make check-env`)
 
 The Prometheus, Tempo, Loki, and Alertmanager datasources are pre-configured and ready to use.
 
@@ -147,10 +154,10 @@ The system uses Docker Compose profiles to control which services run:
 
 **To start with a specific profile:**
 ```bash
-docker compose --profile core up -d
+make up
 
 # To also run the demo telemetry generator:
-docker compose --profile core --profile apps up -d
+make up-apps
 ```
 
 ---
@@ -279,7 +286,7 @@ mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager dat
 chmod -R 777 data/
 
 # Start fresh
-docker compose --profile core up -d
+make up
 ```
 
 ---
@@ -341,7 +348,7 @@ This automated test validates that the complete observability pipeline is functi
 ### Quick Start
 ```bash
 # Ensure services are running
-docker compose --profile core up -d
+make up
 sleep 30
 
 # Run the complete acceptance test
@@ -365,7 +372,7 @@ sleep 30
 
 If you prefer to verify manually:
 
-1. **Open Grafana**: http://localhost:3000 (admin/admin)
+1. **Open Grafana**: http://localhost:3000 (credentials from `.env`)
 2. **Navigate to**: Explore → Prometheus datasource
 3. **Run Query**: `otelcol_process_uptime`
 4. **Expected**: Graph showing uptime increasing over time
@@ -408,6 +415,8 @@ If tests fail, check:
 
 ### Integration with CI/CD
 
+> **Note:** Add a repository secret named `GRAFANA_ADMIN_PASSWORD` in **GitHub → Settings → Secrets and variables → Actions** before running this workflow. Use a secure non-default value (not `admin`, `changeme`, or `REPLACE_ME_set_a_real_password_here`).
+
 ```yaml
 # GitHub Actions example
 jobs:
@@ -416,10 +425,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run acceptance test
+        env:
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
           mkdir -p data/prometheus data/grafana
           chmod -R 777 data/
-          docker compose --profile core up -d
+          make up
           sleep 30
           ./tests/acceptance/observability-pipeline/test-otel-pipeline.sh
       - name: Upload test report
@@ -447,7 +458,7 @@ jobs:
 
 This project follows these principles:
 - ✅ **GitOps-first:** Everything is defined in version-controlled files
-- ✅ **Reproducible:** Can be rebuilt from zero with `git clone` + `docker compose up`
+- ✅ **Reproducible:** Can be rebuilt from zero with `git clone` + `make up`
 - ✅ **No manual steps:** Zero UI clicks or CLI wizardry required
 - ✅ **Declarative:** All configuration is explicit and file-based
 - ✅ **Boring technology:** Reliable, well-documented, production-ready tools
