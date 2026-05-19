@@ -7,6 +7,7 @@ ENV_FILE="${ROOT_DIR}/.env"
 
 trim_whitespace() {
   local value="$1"
+  # Remove leading whitespace, then trailing whitespace.
   value="${value#"${value%%[![:space:]]*}"}"
   value="${value%"${value##*[![:space:]]}"}"
   printf '%s' "${value}"
@@ -14,11 +15,15 @@ trim_whitespace() {
 
 strip_surrounding_quotes() {
   local value="$1"
+  local first_char last_char
   if [ "${#value}" -ge 2 ]; then
-    case "${value}" in
-      \"*\") value="${value:1:${#value}-2}" ;;
-      \'*\') value="${value:1:${#value}-2}" ;;
-    esac
+    first_char="${value:0:1}"
+    last_char="${value: -1}"
+    if [ "${first_char}" = "${last_char}" ]; then
+      case "${first_char}" in
+        '"'|"'") value="${value:1:${#value}-2}" ;;
+      esac
+    fi
   fi
   printf '%s' "${value}"
 }
@@ -26,12 +31,17 @@ strip_surrounding_quotes() {
 read_env_password() {
   local line key raw_value
 
+  # Parse GRAFANA_ADMIN_PASSWORD from .env without sourcing it.
+  # Returns 0 and prints the parsed value on stdout when found.
+  # Returns 1 when the file or key is not present.
   [ -f "${ENV_FILE}" ] || return 1
 
   while IFS= read -r line || [ -n "${line}" ]; do
+    # Support .env files created with CRLF line endings on Windows hosts.
     line="${line%$'\r'}"
     case "${line}" in
-      ''|[[:space:]]*'#'*) continue ;;
+      # Skip empty lines and both direct/indented comment lines.
+      ''|'#'*|[[:space:]]*'#'*) continue ;;
     esac
 
     key="$(trim_whitespace "${line%%=*}")"
@@ -49,7 +59,9 @@ read_env_password() {
 GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:-}"
 
 if [ -z "${GRAFANA_ADMIN_PASSWORD}" ]; then
-  GRAFANA_ADMIN_PASSWORD="$(read_env_password || true)"
+  if parsed_password="$(read_env_password)"; then
+    GRAFANA_ADMIN_PASSWORD="${parsed_password}"
+  fi
 fi
 
 export GRAFANA_ADMIN_PASSWORD

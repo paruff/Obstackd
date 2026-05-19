@@ -14,7 +14,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
 - **Grafana** (v10.4.5) - Visualization and dashboards
 - **Docker Compose** - Service orchestration
 
-**Primary Use Case:** Provides a production-ready observability platform that can be deployed with a guarded startup flow (`make up`) after setting secure Grafana credentials in `.env`.
+**Primary Use Case:** Provides a production-ready observability platform deployable with `make up`. Configure secure Grafana credentials in `.env` first. Startup validation blocks insecure deployments.
 
 **Multi-Stack Support:** Designed to serve as a centralized observability platform for multiple Docker Compose applications. See [Multi-Stack Integration Guide](docs/multi-stack-integration.md) for connecting other applications.
 
@@ -42,6 +42,7 @@ A **Docker Compose-based observability platform** that provides a complete monit
    cp .env.example .env
    $EDITOR .env
    ```
+   Set both `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD` in `.env`.
 
 3. **Create data directories:**
    ```bash
@@ -413,6 +414,8 @@ If tests fail, check:
 4. **Grafana Health**: `curl http://localhost:3000/api/health`
 
 ### Integration with CI/CD
+
+> **Note:** Add a repository secret named `GRAFANA_ADMIN_PASSWORD` in **GitHub → Settings → Secrets and variables → Actions** before running this workflow. Use a secure non-default value (not `admin`, `changeme`, or `REPLACE_ME_set_a_real_password_here`).
 
 ```yaml
 # GitHub Actions example
