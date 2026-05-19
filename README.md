@@ -38,8 +38,8 @@ uFawkesObs provides the observability substrate required for DORA measurement �
 uFawkesObs is the observability plane in the [Fawkes IDP](https://github.com/paruff/fawkes) family.
 
 - **uFawkesObs**: observability plane (metrics, logs, traces, dashboards)
-- **uFawkesPipe** (`deliveryd`): CI/CD plane for pipeline orchestration and deployment event flow
-- **uFawkesDevX** (`developerd`): developer plane for local development workflows and tooling
+- **deliveryd** (also referred to as **uFawkesPipe**): CI/CD plane for pipeline orchestration and deployment event flow
+- **developerd** (also referred to as **uFawkesDevX**): developer plane for local development workflows and tooling
 
 In this architecture, uFawkesObs provides the telemetry substrate; higher-level delivery and developer planes provide the event context needed for end-to-end DORA measurement.
 
@@ -479,7 +479,7 @@ jobs:
 ## Development Philosophy
 
 This project follows these principles:
-- ✅ **GitOps at the configuration layer:** all desired state is in version control and applied declaratively. Deployment reconciliation is push-triggered (via `make up` or CI); pull-based reconciliation requires the Helm + ArgoCD track (see M5).
+- ✅ **GitOps at the configuration layer:** all desired state is in version control and applied declaratively. In this release, deployment reconciliation is push-triggered (via `make up` or CI). Pull-based reconciliation (continuous sync from git to runtime state) requires the Helm + ArgoCD track (see M5).
 - ✅ **Reproducible:** Can be rebuilt from zero with `git clone` + `make up`
 - ✅ **No manual steps:** Zero UI clicks or CLI wizardry required
 - ✅ **Declarative:** All configuration is explicit and file-based
