@@ -142,6 +142,50 @@ class TestPrometheusRuleFiles:
                 assert isinstance(rule_file, str), \
                     "Each rule file should be a string path"
 
+    def test_self_monitoring_rule_file_referenced(self, prometheus_config_path):
+        """Test that self-monitoring rule file is referenced."""
+        with open(prometheus_config_path, 'r') as f:
+            config = yaml.safe_load(f)
+
+        rule_files = config.get('rule_files', [])
+        assert "/etc/prometheus/rules/ufawkesobs-self-monitoring.yml" in rule_files, \
+            "self-monitoring rule file should be referenced in rule_files"
+
+
+class TestPrometheusSelfMonitoringRules:
+    """Test the uFawkesObs self-monitoring rule file."""
+
+    def test_self_monitoring_rule_file_exists(self, project_root):
+        """Test that self-monitoring rule file exists."""
+        rule_file = project_root / "config" / "prometheus" / "rules" / "ufawkesobs-self-monitoring.yml"
+        assert rule_file.exists(), f"Self-monitoring rule file not found: {rule_file}"
+
+    def test_self_monitoring_rules_include_required_alerts(self, project_root):
+        """Test that required self-monitoring alerts are present."""
+        rule_file = project_root / "config" / "prometheus" / "rules" / "ufawkesobs-self-monitoring.yml"
+
+        with open(rule_file, 'r') as f:
+            config = yaml.safe_load(f)
+
+        groups = config.get('groups', [])
+        alerts = [
+            rule['alert']
+            for group in groups
+            for rule in group.get('rules', [])
+            if 'alert' in rule
+        ]
+
+        expected_alerts = [
+            "UFawkesObsServiceDown",
+            "UFawkesObsPrometheusStorageHigh",
+            "UFawkesObsLokiIngestionDropped",
+            "UFawkesObsTempoStorageHigh",
+            "UFawkesObsOtelCollectorDropped",
+            "UFawkesObsContainerRestarting",
+        ]
+        for alert in expected_alerts:
+            assert alert in alerts, f"Missing required alert: {alert}"
+
 
 class TestPrometheusScrapeConfigs:
     """Test the scrape_configs section."""

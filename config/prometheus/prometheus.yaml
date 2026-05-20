@@ -18,6 +18,7 @@ alerting:
 # Rule files
 rule_files:
   - "/etc/prometheus/alerts.yml"
+  - "/etc/prometheus/rules/ufawkesobs-self-monitoring.yml"
 
 # Scrape configurations
 scrape_configs:
@@ -25,6 +26,9 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+        labels:
+          plane: 'obstackd'
+          component: 'prometheus'
     scrape_interval: 30s
 
   # OpenTelemetry Collector (internal metrics)
@@ -32,6 +36,7 @@ scrape_configs:
     static_configs:
       - targets: ['otel-collector:8888']
         labels:
+          plane: 'obstackd'
           component: 'otel-collector'
           service: 'telemetry'
     scrape_interval: 15s
@@ -61,6 +66,7 @@ scrape_configs:
     static_configs:
       - targets: ['otel-collector:8889']
         labels:
+          plane: 'obstackd'
           component: 'otel-collector'
           service: 'application-metrics'
     scrape_interval: 15s
@@ -74,6 +80,7 @@ scrape_configs:
     static_configs:
       - targets: ['alertmanager:9093']
         labels:
+          plane: 'obstackd'
           component: 'alertmanager'
           service: 'alerting'
     scrape_interval: 30s
@@ -85,7 +92,32 @@ scrape_configs:
     static_configs:
       - targets: ['alloy:12345']
         labels:
+          plane: 'obstackd'
           component: 'alloy'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  # Loki
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+        labels:
+          plane: 'obstackd'
+          component: 'loki'
+          service: 'logging'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scheme: 'http'
+
+  # Tempo
+  - job_name: 'tempo'
+    static_configs:
+      - targets: ['tempo:3200']
+        labels:
+          plane: 'obstackd'
+          component: 'tempo'
+          service: 'tracing'
     scrape_interval: 15s
     metrics_path: '/metrics'
     scheme: 'http'
@@ -95,6 +127,7 @@ scrape_configs:
     static_configs:
       - targets: ['grafana:3000']
         labels:
+          plane: 'obstackd'
           component: 'grafana'
     scrape_interval: 30s
     metrics_path: '/metrics'
@@ -105,6 +138,7 @@ scrape_configs:
     static_configs:
       - targets: ['node-exporter:9100']
         labels:
+          plane: 'obstackd'
           component: 'node-exporter'
     scrape_interval: 15s
     metrics_path: '/metrics'

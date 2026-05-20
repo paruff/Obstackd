@@ -34,6 +34,14 @@ route:
 
   # Child routes for specific alert routing
   routes:
+    # uFawkesObs platform health alerts - dedicated receiver
+    - match:
+        alert_domain: ufawkesobs-health
+      receiver: 'ufawkesobs-health'
+      group_wait: 15s
+      repeat_interval: 1h
+      continue: false
+
     # Critical alerts - immediate notification
     - match:
         severity: critical
@@ -120,5 +128,12 @@ receivers:
   - name: 'info-alerts'
     webhook_configs:
       - url: 'http://host.docker.internal:5001/webhook/info'
+        send_resolved: true
+        max_alerts: 0
+
+  # uFawkesObs platform health receiver
+  - name: 'ufawkesobs-health'
+    webhook_configs:
+      - url: 'http://host.docker.internal:5001/webhook/ufawkesobs-health'
         send_resolved: true
         max_alerts: 0

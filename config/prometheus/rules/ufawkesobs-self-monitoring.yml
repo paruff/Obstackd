@@ -1,0 +1,129 @@
+---
+groups:
+  - name: ufawkesobs_self_monitoring
+    interval: 30s
+    rules:
+      - alert: UFawkesObsServiceDown
+        expr: |
+          (
+            up{plane="obstackd", job=~"prometheus|alertmanager|grafana|otel-collector|loki|tempo|alloy|node-exporter"} < 1
+          ) or on() (
+            absent(up{plane="obstackd", job=~"prometheus|alertmanager|grafana|otel-collector|loki|tempo|alloy|node-exporter"}) * 0
+          )
+        for: 2m
+        labels:
+          severity: critical
+          category: availability
+          alert_domain: ufawkesobs-health
+        annotations:
+          summary: "uFawkesObs service is unreachable"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} has been unreachable for more than 2 minutes."
+          runbook_url: "https://github.com/paruff/uFawkesObs/blob/main/docs/runbooks/ufawkesobs-health.md#ufawkesobsservicedown"
+
+      - alert: UFawkesObsPrometheusStorageHigh
+        expr: |
+          (
+            prometheus_tsdb_storage_blocks_bytes{job="prometheus"} / 2147483648 > 0.8
+          ) or on() (
+            absent(prometheus_tsdb_storage_blocks_bytes{job="prometheus"}) * 0
+          )
+        for: 10m
+        labels:
+          severity: warning
+          category: storage
+          alert_domain: ufawkesobs-health
+        annotations:
+          summary: "Prometheus TSDB storage is above 80% of planned capacity"
+          description: "Prometheus TSDB storage usage exceeded 80% of the estimated 2GB capacity for 30-day retention."
+          runbook_url: "https://github.com/paruff/uFawkesObs/blob/main/docs/runbooks/ufawkesobs-health.md#ufawkesobsprometheusstoragehigh"
+
+      - alert: UFawkesObsLokiIngestionDropped
+        expr: |
+          (
+            (
+              sum(rate(loki_ingester_streams_created_total{job="loki"}[5m]))
+              <
+              (
+                sum(rate(loki_ingester_streams_created_total{job="loki"}[30m] offset 30m)) * 0.5
+              )
+            )
+            and
+            (
+              sum(rate(loki_ingester_streams_created_total{job="loki"}[30m] offset 30m)) > 0
+            )
+          ) or on() (
+            absent(loki_ingester_streams_created_total{job="loki"}) * 0
+          )
+        for: 10m
+        labels:
+          severity: warning
+          category: ingestion
+          alert_domain: ufawkesobs-health
+        annotations:
+          summary: "Loki ingestion stream creation rate dropped"
+          description: "Loki stream creation rate dropped below 50% of the previous baseline, indicating potential ingestion backpressure."
+          runbook_url: "https://github.com/paruff/uFawkesObs/blob/main/docs/runbooks/ufawkesobs-health.md#ufawkesobslokiingestiondropped"
+
+      - alert: UFawkesObsTempoStorageHigh
+        expr: |
+          (
+            (
+              1 -
+              (
+                node_filesystem_avail_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs|ramfs"}
+                /
+                node_filesystem_size_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs|ramfs"}
+              )
+            ) > 0.8
+          ) or on() (
+            absent(node_filesystem_avail_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs|ramfs"}) * 0
+          )
+        for: 10m
+        labels:
+          severity: warning
+          category: storage
+          alert_domain: ufawkesobs-health
+        annotations:
+          summary: "Tempo storage host filesystem usage is above 80%"
+          description: "The filesystem hosting ./data/tempo is above 80% usage according to node-exporter filesystem metrics."
+          runbook_url: "https://github.com/paruff/uFawkesObs/blob/main/docs/runbooks/ufawkesobs-health.md#ufawkesobstempostoragehigh"
+
+      - alert: UFawkesObsOtelCollectorDropped
+        expr: |
+          (
+            (
+              sum(increase(otelcol_processor_dropped_spans{job="otel-collector"}[5m])) > 0
+            )
+            or
+            (
+              sum(increase(otelcol_exporter_send_failed_spans{job="otel-collector"}[5m])) > 0
+            )
+          ) or on() (
+            absent(otelcol_processor_dropped_spans{job="otel-collector"} or otelcol_exporter_send_failed_spans{job="otel-collector"}) * 0
+          )
+        for: 5m
+        labels:
+          severity: critical
+          category: ingestion
+          alert_domain: ufawkesobs-health
+        annotations:
+          summary: "OpenTelemetry Collector is dropping or failing to send spans"
+          description: "OTel Collector reported dropped spans or failed span exports continuously for more than 5 minutes."
+          runbook_url: "https://github.com/paruff/uFawkesObs/blob/main/docs/runbooks/ufawkesobs-health.md#ufawkesobsotelcollectordropped"
+
+      - alert: UFawkesObsContainerRestarting
+        expr: |
+          (
+            changes(process_start_time_seconds{plane="obstackd", job=~"prometheus|alertmanager|grafana|otel-collector|loki|tempo|alloy|node-exporter"}[15m]) > 0
+          ) or on() (
+            absent(process_start_time_seconds{plane="obstackd", job=~"prometheus|alertmanager|grafana|otel-collector|loki|tempo|alloy|node-exporter"}) * 0
+          )
+        for: 1m
+        labels:
+          severity: warning
+          category: reliability
+          alert_domain: ufawkesobs-health
+        annotations:
+          summary: "uFawkesObs service restarted recently"
+          description: "Detected process start time changes for {{ $labels.job }} on {{ $labels.instance }} within the last 15 minutes."
+          runbook_url: "https://github.com/paruff/uFawkesObs/blob/main/docs/runbooks/ufawkesobs-health.md#ufawkesobscontainerrestarting"

@@ -11,6 +11,7 @@ providers:
     updateIntervalSeconds: 10
     allowUiUpdates: false
     options:
+      # Includes dashboards/platform/ufawkesobs-health.json
       path: /etc/grafana/dashboards/platform
       foldersFromFilesStructure: false
 
