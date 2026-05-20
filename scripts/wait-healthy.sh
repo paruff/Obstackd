@@ -45,7 +45,7 @@ readonly SERVICES
 # Mutable readiness state tracked across polling iterations.
 if (( BASH_VERSINFO[0] < 4 )); then
   echo "❌ scripts/wait-healthy.sh requires Bash 4+."
-  echo "On macOS, install a newer Bash (e.g., 'brew install bash') and run this script with it."
+  echo "On macOS, install a newer Bash (e.g., 'brew install bash') and run '/opt/homebrew/bin/bash ./scripts/wait-healthy.sh'."
   exit 1
 fi
 
@@ -59,7 +59,7 @@ is_service_ready() {
 main() {
   local start_time deadline now elapsed
   local all_ready
-  local service name url
+  local service name url service_now_ready
 
   validate_positive_integer "${WAIT_TIMEOUT}" "WAIT_TIMEOUT"
   validate_positive_integer "${WAIT_INTERVAL}" "WAIT_INTERVAL"
@@ -69,16 +69,9 @@ main() {
   echo "Waiting for core observability services (timeout: ${WAIT_TIMEOUT}s)"
 
   while true; do
-    elapsed=0
     all_ready=true
 
     for service in "${SERVICES[@]}"; do
-      now=$(date +%s)
-      if (( now >= deadline )); then
-        all_ready=false
-        break
-      fi
-
       name="${service%%|*}"
       url="${service#*|}"
 
@@ -86,16 +79,21 @@ main() {
         continue
       fi
 
+      service_now_ready=false
       if is_service_ready "${url}"; then
         SERVICE_READY["$name"]=true
-        now=$(date +%s)
-        elapsed=$((now - start_time))
-        echo "✅ ${name} healthy (${elapsed}s)"
+        service_now_ready=true
       else
         all_ready=false
       fi
 
       now=$(date +%s)
+      elapsed=$((now - start_time))
+
+      if [[ "${service_now_ready}" == "true" ]]; then
+        echo "✅ ${name} healthy (${elapsed}s)"
+      fi
+
       if (( now >= deadline )); then
         all_ready=false
         break
