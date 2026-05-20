@@ -69,20 +69,16 @@ In this architecture, uFawkesObs provides the telemetry substrate; higher-level 
    ```
    Set both `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD` in `.env`.
 
-3. **Create data directories:**
+3. **Create data directories and start the stack:**
    ```bash
-   mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager data/alloy
-   chmod -R 777 data/
+   make init && make up
    ```
-   
-   > **Note:** `chmod 777` is used for maximum compatibility across different Docker setups. For production deployments, consider using more restrictive permissions based on your Docker user/group configuration.
+   `make init` creates each `data/` directory with `755` permissions and prints
+   the correct `chown` commands for your OS if a container cannot write to a
+   directory. See [docs/production-hardening.md](docs/production-hardening.md)
+   for details.
 
-4. **Start the observability stack:**
-   ```bash
-   make up
-   ```
-
-5. **Wait for services to become healthy:**
+4. **Wait for services to become healthy:**
    ```bash
    ./scripts/wait-healthy.sh
    ```
@@ -263,6 +259,19 @@ docker compose down -v
 
 ---
 
+## Documentation
+
+| Document | Description |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How services connect and depend on each other |
+| [docs/production-hardening.md](docs/production-hardening.md) | Correct permissions, TLS, secret management, when NOT to use this tool |
+| [docs/multi-stack-integration.md](docs/multi-stack-integration.md) | Connecting other Docker Compose applications |
+| [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) | Known issues and workarounds |
+| [docs/CHANGE_IMPACT_MAP.md](docs/CHANGE_IMPACT_MAP.md) | What breaks when configs change |
+| [docs/PROMPT_LIBRARY.md](docs/PROMPT_LIBRARY.md) | Tested prompt templates for common tasks |
+
+---
+
 ---
 
 ## Troubleshooting
@@ -278,11 +287,29 @@ lsof -i :9090
 ```
 
 ### Permission Denied on Data Directories
+Run `make init` first — it creates each directory with `755` permissions and
+prints the correct `chown` commands for your OS:
+
 ```bash
-chmod -R 777 data/
+make init
 ```
 
-> **Security Note:** The `chmod 777` command is used in this project's smoke tests for maximum compatibility. For production use, consider using more restrictive permissions (e.g., `chmod 755`) and proper Docker user/group configuration.
+If a container still cannot write (common on Linux when the host UID differs
+from the container UID), apply the `chown` commands printed by `make init`, for
+example:
+
+```bash
+sudo chown -R 472 data/grafana          # Grafana UID
+sudo chown -R 65534 data/prometheus data/alertmanager  # nobody UID
+sudo chown -R 10001 data/loki data/tempo               # Loki/Tempo UID
+```
+
+> **⚠️ Last resort — security warning:** `chmod -R 777 data/` makes every data
+> directory world-writable. This exposes Prometheus TSDB, Grafana SQLite,
+> datasource credentials, and trace data to any process on the host. Only use
+> this on a single-user localhost machine and never in any shared or networked
+> environment. See [docs/production-hardening.md](docs/production-hardening.md)
+> for secure alternatives.
 
 ### Containers Won't Start
 ```bash
@@ -301,13 +328,16 @@ docker compose down -v
 # Clean data directories
 rm -rf data/prometheus/* data/grafana/* data/tempo/* data/loki/* data/alertmanager/* data/alloy/*
 
-# Recreate
-mkdir -p data/prometheus data/grafana data/tempo data/loki data/alertmanager data/alloy
-chmod -R 777 data/
+# Recreate with correct permissions
+make init
 
 # Start fresh
 make up
 ```
+
+> **⚠️ Last resort only:** If `make init` is insufficient due to a UID mismatch,
+> you may temporarily use `chmod -R 777 data/` on a single-user localhost machine.
+> This is a security risk — see [docs/production-hardening.md](docs/production-hardening.md).
 
 ---
 

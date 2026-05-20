@@ -60,16 +60,22 @@ trace storage beyond the host disk capacity.
 
 ## Operational
 
-### `chmod 777 data/` Required for Startup
+### Directory Permissions Require UID Alignment
 
-**Limitation:** The `data/` directories must be world-writable for Docker containers to write
-persistent data. This is because container processes run as non-root UIDs that differ from
-the host user.
+**Limitation:** Container processes run as specific non-root UIDs (Grafana: 472,
+Prometheus/Alertmanager: 65534, Loki/Tempo: 10001) that differ from the host user.
+On Linux, the host-side `data/` directories must be owned by those UIDs for
+containers to write persistent data.
 
-**Impact:** Overly permissive permissions on the host filesystem.
+**Impact:** First-time setup requires an extra step on Linux hosts.
 
-**Workaround:** The smoke tests apply `chmod 777 data/` automatically. For production, configure
-proper UID/GID mappings using Docker `user:` and `group_add:` settings.
+**Workaround:** Run `make init` to create directories with `755` permissions. On Linux,
+follow the printed `chown` commands to assign correct ownership. On Docker Desktop
+(macOS/Windows) `make init` alone is sufficient.
+
+`chmod -R 777 data/` is a last-resort workaround for localhost machines only and
+should never be used in shared or networked environments. See
+[docs/production-hardening.md](production-hardening.md) for details.
 
 ---
 
