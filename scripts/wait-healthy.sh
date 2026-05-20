@@ -5,18 +5,31 @@ WAIT_TIMEOUT="${WAIT_TIMEOUT:-120}"
 WAIT_INTERVAL="${WAIT_INTERVAL:-2}"
 CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-5}"
 CURL_MAX_TIME="${CURL_MAX_TIME:-10}"
+WAIT_CONTEXT="${WAIT_CONTEXT:-host}"
 
-readonly WAIT_TIMEOUT WAIT_INTERVAL CURL_CONNECT_TIMEOUT CURL_MAX_TIME
+readonly WAIT_TIMEOUT WAIT_INTERVAL CURL_CONNECT_TIMEOUT CURL_MAX_TIME WAIT_CONTEXT
 
-SERVICES=(
-  "Prometheus|http://localhost:9090/-/healthy"
-  "Grafana|http://localhost:3000/api/health"
-  "Loki|http://localhost:3100/ready"
-  "Tempo|http://localhost:3200/ready"
-  "Alloy|http://localhost:12345/-/ready"
-  "OTel Collector|http://localhost:8888/metrics"
-  "Alertmanager|http://localhost:9093/-/healthy"
-)
+if [[ "${WAIT_CONTEXT}" == "compose" ]]; then
+  SERVICES=(
+    "Prometheus|http://prometheus:9090/-/healthy"
+    "Grafana|http://grafana:3000/api/health"
+    "Loki|http://loki:3100/ready"
+    "Tempo|http://tempo:3200/ready"
+    "Alloy|http://alloy:12345/-/ready"
+    "OTel Collector|http://otel-collector:8888/metrics"
+    "Alertmanager|http://alertmanager:9093/-/healthy"
+  )
+else
+  SERVICES=(
+    "Prometheus|http://localhost:9090/-/healthy"
+    "Grafana|http://localhost:3000/api/health"
+    "Loki|http://localhost:3100/ready"
+    "Tempo|http://localhost:3200/ready"
+    "Alloy|http://localhost:12345/-/ready"
+    "OTel Collector|http://localhost:8888/metrics"
+    "Alertmanager|http://localhost:9093/-/healthy"
+  )
+fi
 readonly SERVICES
 
 declare -A SERVICE_READY=()
