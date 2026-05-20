@@ -3,6 +3,8 @@ set -euo pipefail
 
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-120}"
 SLEEP_SECONDS="${SLEEP_SECONDS:-2}"
+CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-5}"
+CURL_MAX_TIME="${CURL_MAX_TIME:-10}"
 
 wait_for_endpoint() {
   local name="$1"
@@ -10,7 +12,7 @@ wait_for_endpoint() {
   local deadline
   deadline=$((SECONDS + TIMEOUT_SECONDS))
 
-  until curl -fsS --connect-timeout 5 --max-time 10 "$url" > /dev/null; do
+  until curl -fsS --connect-timeout "${CURL_CONNECT_TIMEOUT}" --max-time "${CURL_MAX_TIME}" "$url" > /dev/null; do
     if (( SECONDS >= deadline )); then
       echo "Timed out waiting for ${name} at ${url}"
       return 1
